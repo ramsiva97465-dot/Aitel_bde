@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Eye, EyeOff, BookOpen, Clock, Layers, Users, ArrowRight, Mail, Lock } from 'lucide-react';
+import { Zap, Eye, EyeOff, BookOpen, Clock, Layers, Users, ArrowRight, Mail, Lock, Phone } from 'lucide-react';
 
 export default function Login() {
   const { login, error } = useAuth();
@@ -169,7 +169,7 @@ export default function Login() {
               className="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4.5 rounded-xl shadow-xl shadow-brand-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 mt-6 text-lg"
             >
               {loading && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {isRegistering ? 'Create Account' : 'Sign In'}
+              {isRegistering ? 'REGISTER NOW' : 'Sign In'}
             </button>
           </form>
 
@@ -180,7 +180,7 @@ export default function Login() {
                 onClick={() => setIsRegistering(!isRegistering)}
                 className="text-brand-600 font-bold hover:underline"
               >
-                {isRegistering ? 'Sign In' : 'Request a free trial'}
+                {isRegistering ? 'Sign In' : 'Register'}
               </button>
             </p>
           </div>

@@ -247,11 +247,62 @@ app.post('/api/webhooks/portal', async (req, res) => {
   const isMeta = data.object === 'page';
   const source = isMeta ? 'Meta Ads' : 'Company Portal';
   
-  const customerName = isMeta ? 'New Meta Lead' : (data.customerName || data.name);
-  const phone = isMeta ? 'Check Meta Suite' : data.phone;
+  const customerName = isMeta ? 'New Meta Lead' : (data.customerName || data.name || 'Unknown Client');
+  const phone = isMeta ? 'Check Meta Suite' : (data.phone || '');
   const email = data.email || '';
   const companyName = data.companyName || '—';
-  const status = data.status || 'New';
+  let status = data.status || 'New';
+
+  // ══════════════════════════════════════════
+  // INVOICE / QUOTATION WEBHOOK HANDLER
+  // ══════════════════════════════════════════
+  const isInvoice = data.type === 'invoice' || data.invoice_number || data.invoiceNumber;
+  const isQuotation = data.type === 'quotation' || data.quotation_number || data.quotationNumber;
+
+  if (isInvoice || isQuotation) {
+    try {
+      // 1. Find the lead by email or phone to link the document
+      const leadRes = await pool.query('SELECT id FROM demo_requests WHERE email = $1 OR phone = $2 LIMIT 1', [email, phone]);
+      let leadId = leadRes.rows.length > 0 ? leadRes.rows[0].id : null;
+
+      // If lead doesn't exist, create a shell lead for this invoice
+      if (!leadId) {
+        const newLead = await pool.query(
+          'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+          [customerName, email, phone, companyName, 'External Billing', isInvoice ? 'Invoice Raised' : 'Quotation Raised']
+        );
+        leadId = newLead.rows[0].id;
+      }
+
+      // 2. Insert Invoice or Quotation
+      const amount = data.total || data.amount || data.price || 0;
+      const docNumber = data.invoice_number || data.invoiceNumber || data.quotation_number || data.quotationNumber || `${isInvoice ? 'INV' : 'QT'}-${Date.now()}`;
+      const serviceName = data.service_name || data.serviceName || data.item || 'External Service';
+
+      if (isInvoice) {
+        await pool.query(
+          'INSERT INTO invoices (lead_id, invoice_number, service_name, total, status) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
+          [leadId, docNumber, serviceName, amount, 'Sent']
+        );
+        status = 'Invoice Raised';
+      } else {
+        await pool.query(
+          'INSERT INTO quotations (lead_id, quotation_number, service_name, total, status) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
+          [leadId, docNumber, serviceName, amount, 'Sent']
+        );
+        status = 'Quotation Raised';
+      }
+
+      // 3. Update the Lead Status so it shows on the Dashboard Counters!
+      await pool.query('UPDATE demo_requests SET status = $1 WHERE id = $2', [status, leadId]);
+      
+      console.log(`✅ Webhook: Processed External ${isInvoice ? 'Invoice' : 'Quotation'} for Lead #${leadId}`);
+      return res.status(200).json({ success: true, message: 'Document processed successfully' });
+    } catch (err) {
+      console.error('❌ Billing Webhook Error:', err.message);
+      return res.status(500).json({ error: 'Failed to process billing webhook' });
+    }
+  }
 
   // Smart Sync: Update existing lead OR Create new
   try {

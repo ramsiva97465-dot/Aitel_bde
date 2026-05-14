@@ -317,6 +317,12 @@ export const LeadProvider = ({ children }) => {
       if (!response.ok) throw new Error('Failed to save invoice');
       const saved = await response.json();
       setInvoices((prev) => [...prev, saved]);
+      
+      // Auto-update lead status to update dashboard counters
+      if (invoice.leadId) {
+        updateLeadStatus(invoice.leadId, 'Invoice Raised', 'System', 'Invoice Generated');
+      }
+      
       return saved;
     } catch (err) {
       console.error('❌ Invoice Save Failed:', err.message);
@@ -347,6 +353,12 @@ export const LeadProvider = ({ children }) => {
       if (!response.ok) throw new Error('Failed to save quotation');
       const saved = await response.json();
       setQuotations((prev) => [...prev, saved]);
+      
+      // Auto-update lead status to update dashboard counters
+      if (quotation.leadId) {
+        updateLeadStatus(quotation.leadId, 'Quotation Raised', 'System', 'Quotation Generated');
+      }
+      
       return saved;
     } catch (err) {
       console.error('❌ Quotation Save Failed:', err.message);

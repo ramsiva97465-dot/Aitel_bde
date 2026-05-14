@@ -24,11 +24,20 @@ export default function AdminDashboard() {
     }, 1000);
   };
 
-  // Stats
+  // Updated Statistics Logic
   const total = leads.length;
   const metaAds = leads.filter((l) => l.source === 'Meta Ads').length;
   const portal = leads.filter((l) => l.source === 'Company Portal').length;
   const statusCount = (s) => leads.filter((l) => l.status === s).length;
+  
+  // Financial Success Counters
+  const billingCount = leads.filter((l) => 
+    ['Invoice Raised', 'Pro-forma Raised', 'Tax Invoice Raised'].includes(l.status)
+  ).length;
+
+  const convertedCount = leads.filter((l) => 
+    ['Converted', 'Invoice Raised', 'Pro-forma Raised', 'Tax Invoice Raised'].includes(l.status)
+  ).length;
 
   const recentLeads = [...leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
 
@@ -41,7 +50,7 @@ export default function AdminDashboard() {
       contacted: bl.filter((l) => l.status === 'Contacted').length,
       notAnswered: bl.filter((l) => l.status === 'Call Not Answered').length,
       interested: bl.filter((l) => l.status === 'Interested').length,
-      converted: bl.filter((l) => l.status === 'Converted').length,
+      converted: bl.filter((l) => ['Converted', 'Invoice Raised', 'Pro-forma Raised', 'Tax Invoice Raised'].includes(l.status)).length,
       pending: bl.filter((l) => l.status === 'New').length,
     };
   });
@@ -89,18 +98,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <StatCard label="Total Leads" value={total} icon={PhoneCall} color="green" />
-        <StatCard label="Meta Ads" value={metaAds} icon={Megaphone} color="blue" />
-        <StatCard label="Company Portal" value={portal} icon={Globe} color="purple" />
+        <StatCard label="Invoices Raised" value={billingCount} icon={FileText} color="emerald" />
+        <StatCard label="Quotations" value={statusCount('Quotation Raised')} icon={FileSpreadsheet} color="indigo" />
+        <StatCard label="Converted"          value={convertedCount}          icon={CheckCircle}   color="primary" />
         <StatCard label="New Leads" value={statusCount('New')} icon={Star} color="yellow" />
-        <StatCard label="Contacted"        value={statusCount('Contacted')}          icon={MessageSquare} color="teal" />
-        <StatCard label="Not Answered"      value={statusCount('Call Not Answered')}  icon={PhoneMissed}   color="gray" />
         <StatCard label="Interested"         value={statusCount('Interested')}         icon={TrendingUp}    color="green" />
-        <StatCard label="Not Interested"     value={statusCount('Not Interested')}     icon={XCircle}       color="red" />
-        <StatCard label="Callback"           value={statusCount('Callback')}           icon={RotateCcw}     color="orange" />
-        <StatCard label="Follow Up"          value={statusCount('Follow Up')}          icon={Repeat2}       color="purple" />
-        <StatCard label="Converted"          value={statusCount('Converted')}          icon={CheckCircle}   color="green" />
       </div>
 
       {/* Recent Leads */}

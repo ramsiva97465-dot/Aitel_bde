@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Zap, Eye, EyeOff, BookOpen, Clock, Layers, Users, ArrowRight, Mail, Lock, Phone } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function Login() {
   const { login, error } = useAuth();
@@ -19,19 +20,25 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     
-    if (isRegistering) {
-      // Handle Registration logic here
-      console.log('Registering:', { name, email, phone, password });
-      toast.success('Registration request sent!');
-      setIsRegistering(false);
-    } else {
-      const user = login(email, password);
-      if (user) {
-        if (user.role === 'admin') navigate('/admin');
-        else navigate('/bde');
+    try {
+      if (isRegistering) {
+        // Handle Registration logic
+        console.log('Registering:', { name, email, phone, password });
+        toast.success('Registration request sent to Admin!');
+        setIsRegistering(false);
+      } else {
+        const user = login(email, password);
+        if (user) {
+          if (user.role === 'admin') navigate('/admin');
+          else navigate('/bde');
+        }
       }
+    } catch (err) {
+      console.error(err);
+      toast.error('Something went wrong!');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fillAdmin = () => { setEmail('admin@aitel.com'); setPassword('admin123'); };
@@ -59,10 +66,10 @@ export default function Login() {
 
           <div className="mb-10 text-center">
             <h1 className="text-4xl font-extrabold text-gray-700 mb-2">
-              {isRegistering ? 'Create Account' : 'Welcome back'}
+              {isRegistering ? 'Admin Registration' : 'Welcome back'}
             </h1>
             <p className="text-gray-500 font-medium">
-              {isRegistering ? 'Join the Aitel executive network.' : 'Please enter your details.'}
+              {isRegistering ? 'Request access to the Administrative Panel.' : 'Please enter your details.'}
             </p>
           </div>
 
@@ -180,7 +187,7 @@ export default function Login() {
                 onClick={() => setIsRegistering(!isRegistering)}
                 className="text-brand-600 font-bold hover:underline"
               >
-                {isRegistering ? 'Sign In' : 'Register'}
+                {isRegistering ? 'Sign In' : 'Admin Register'}
               </button>
             </p>
           </div>

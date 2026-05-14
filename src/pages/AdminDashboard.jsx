@@ -106,11 +106,11 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-500 mb-4">To see Invoices & Quotations here, copy this URL and paste it into your <strong>Invoice Website Settings</strong> under "Webhook" or "API":</p>
             <div className="flex items-center gap-2 p-3 bg-white border border-emerald-100 rounded-xl">
               <code className="text-xs text-emerald-700 font-mono flex-1 break-all">
-                https://aitel-bde-backend.onrender.com/api/webhooks/portal
+                https://aitel-lead-backend.onrender.com/api/webhooks/portal
               </code>
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText('https://aitel-bde-backend.onrender.com/api/webhooks/portal');
+                  navigator.clipboard.writeText('https://aitel-lead-backend.onrender.com/api/webhooks/portal');
                   toast.success('Webhook Link Copied!');
                 }}
                 className="btn-primary text-[10px] py-1.5 px-3 uppercase tracking-widest"

@@ -17,28 +17,52 @@ pool.on('connect', () => {
   console.log('🐘 Connected to Render PostgreSQL');
 });
 
-// Initialize Tables
+// Initialize Tables — Complete Schema
 const initDB = async () => {
   try {
-    // 1. Leads Table (Ensure it matches our queries)
+    // ══════════════════════════════════════════
+    // TABLE 1: LEADS (demo_requests)
+    // Fields: all lead data + notes + status history
+    // ══════════════════════════════════════════
     await pool.query(`
       CREATE TABLE IF NOT EXISTS demo_requests (
         id SERIAL PRIMARY KEY,
-        customer_name TEXT,
+        customer_name TEXT NOT NULL,
         email TEXT,
         phone TEXT,
         company_name TEXT,
         requirement TEXT,
-        source TEXT,
+        source TEXT DEFAULT 'Manual',
         status TEXT DEFAULT 'New',
         assigned_to TEXT,
-        status_history JSONB DEFAULT '[]',
         notes JSONB DEFAULT '[]',
+        status_history JSONB DEFAULT '[]',
+        is_seen BOOLEAN DEFAULT false,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // 2. Follow-ups Table
+    // ══════════════════════════════════════════
+    // TABLE 2: USERS (admins + BDEs)
+    // Fields: auth + role + status
+    // ══════════════════════════════════════════
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        phone TEXT,
+        role TEXT DEFAULT 'bde',
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // ══════════════════════════════════════════
+    // TABLE 3: FOLLOW-UPS
+    // Fields: linked to lead + BDE + schedule
+    // ══════════════════════════════════════════
     await pool.query(`
       CREATE TABLE IF NOT EXISTS follow_ups (
         id SERIAL PRIMARY KEY,
@@ -52,61 +76,50 @@ const initDB = async () => {
       )
     `);
 
-    // 2. Users Table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        phone TEXT,
-        role TEXT DEFAULT 'bde',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create default admin if not exists
-    await pool.query(`
-      INSERT INTO users (name, email, password, role) 
-      VALUES ('Admin User', 'admin@aitel.com', 'admin123', 'admin')
-      ON CONFLICT (email) DO NOTHING
-    `);
-
-    // ---- SAFE MIGRATIONS (add missing columns to existing tables) ----
-    // Add phone column to users if missing
-    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
-    // Add notes column to demo_requests if missing
-    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS notes JSONB DEFAULT '[]'`);
-    // Add status_history column to demo_requests if missing
-    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'`);
-    // Add assigned_to column to demo_requests if missing
-    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS assigned_to TEXT`);
-
-    // 3. Invoices Table
+    // ══════════════════════════════════════════
+    // TABLE 4: INVOICES
+    // Fields: full billing details per lead
+    // ══════════════════════════════════════════
     await pool.query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id SERIAL PRIMARY KEY,
         lead_id INTEGER,
         invoice_number TEXT UNIQUE,
-        amount DECIMAL,
-        status TEXT,
+        service_name TEXT,
+        quantity INTEGER DEFAULT 1,
+        price DECIMAL DEFAULT 0,
+        tax DECIMAL DEFAULT 18,
+        total DECIMAL DEFAULT 0,
+        amount DECIMAL DEFAULT 0,
+        status TEXT DEFAULT 'Sent',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // 4. Quotations Table
+    // ══════════════════════════════════════════
+    // TABLE 5: QUOTATIONS
+    // Fields: full billing details per lead
+    // ══════════════════════════════════════════
     await pool.query(`
       CREATE TABLE IF NOT EXISTS quotations (
         id SERIAL PRIMARY KEY,
         lead_id INTEGER,
         quotation_number TEXT UNIQUE,
-        amount DECIMAL,
-        status TEXT,
+        service_name TEXT,
+        quantity INTEGER DEFAULT 1,
+        price DECIMAL DEFAULT 0,
+        tax DECIMAL DEFAULT 18,
+        total DECIMAL DEFAULT 0,
+        amount DECIMAL DEFAULT 0,
+        status TEXT DEFAULT 'Sent',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // 5. Notifications Table
+    // ══════════════════════════════════════════
+    // TABLE 6: NOTIFICATIONS
+    // Fields: per-user alerts with read status
+    // ══════════════════════════════════════════
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notifications (
         id SERIAL PRIMARY KEY,
@@ -119,7 +132,36 @@ const initDB = async () => {
       )
     `);
 
-    console.log('✅ DATABASE SYNC: Render PostgreSQL is ALIVE!');
+    // ══════════════════════════════════════════
+    // SAFE MIGRATIONS — Add missing columns to
+    // existing tables without data loss
+    // ══════════════════════════════════════════
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`);
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS notes JSONB DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS assigned_to TEXT`);
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS is_seen BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS requirement TEXT`);
+    await pool.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS service_name TEXT`);
+    await pool.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1`);
+    await pool.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS price DECIMAL DEFAULT 0`);
+    await pool.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tax DECIMAL DEFAULT 18`);
+    await pool.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS total DECIMAL DEFAULT 0`);
+    await pool.query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS service_name TEXT`);
+    await pool.query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1`);
+    await pool.query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS price DECIMAL DEFAULT 0`);
+    await pool.query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS tax DECIMAL DEFAULT 18`);
+    await pool.query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS total DECIMAL DEFAULT 0`);
+
+    // Default Admin Account
+    await pool.query(`
+      INSERT INTO users (name, email, password, role, status)
+      VALUES ('Admin User', 'admin@aitel.com', 'admin123', 'admin', 'active')
+      ON CONFLICT (email) DO NOTHING
+    `);
+
+    console.log('✅ DATABASE SYNC: All 6 tables ready. Zero data loss guaranteed!');
   } catch (err) {
     console.error('❌ DATABASE SYNC FAILED:', err.message);
   }

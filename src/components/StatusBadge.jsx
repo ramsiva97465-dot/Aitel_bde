@@ -9,6 +9,8 @@ const STATUS_COLORS = {
   'In Queue':          'bg-gray-100 text-gray-500 italic',
   'Shared':             'bg-blue-100 text-blue-700',
   'Quotation Raised':   'bg-indigo-100 text-indigo-700',
+  'Pro-forma Raised':   'bg-amber-100 text-amber-700',
+  'Tax Invoice Raised': 'bg-emerald-100 text-emerald-700 font-bold',
   'Invoice Raised':     'bg-emerald-100 text-emerald-700',
   'Converted':          'bg-primary-100 text-primary-700',
 };

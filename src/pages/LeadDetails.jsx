@@ -23,7 +23,8 @@ const STATUS_BUTTONS = [
   { label: 'Follow Up',          value: 'Follow Up',         color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',  icon: CalendarClock },
   { label: 'Shared via WhatsApp/Mail', value: 'Shared',      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',       icon: MessageSquare },
   { label: 'Quotation Raised',   value: 'Quotation Raised',  color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200', icon: FileSpreadsheet },
-  { label: 'Invoice Raised',     value: 'Invoice Raised',    color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200', icon: FileText },
+  { label: 'Pro-forma Raised',   value: 'Pro-forma Raised',  color: 'bg-amber-100 text-amber-700 hover:bg-amber-200',     icon: FileText },
+  { label: 'Tax Invoice Raised', value: 'Tax Invoice Raised',color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200', icon: FileText },
   { label: 'Converted',          value: 'Converted',         color: 'bg-primary-100 text-primary-700 hover:bg-primary-200', icon: CheckCircle },
 ];
 

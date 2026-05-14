@@ -11,8 +11,8 @@ const adminLinks = [
   { to: '/admin/pipeline', label: 'Lead Pipeline', icon: Layers },
   { to: '/admin/bde', label: 'Executive Management', icon: Users },
   { to: '/admin/notifications', label: 'Notifications', icon: Bell },
-  { to: '/admin/invoice', label: 'Invoice', icon: FileText },
-  { to: '/admin/quotation', label: 'Quotation', icon: FileSpreadsheet },
+  { label: 'Invoice', icon: FileText, external: 'https://invoice-theaitel.vercel.app/' },
+  { label: 'Quotation', icon: FileSpreadsheet, external: 'https://invoice-theaitel.vercel.app/' },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -22,6 +22,8 @@ const bdeLinks = [
   { to: '/bde/pipeline', label: 'Lead Pipeline', icon: Layers },
   { to: '/bde/followup', label: 'Follow-up Calendar', icon: Calendar },
   { to: '/bde/notifications', label: 'Notifications', icon: Bell },
+  { label: 'Invoice', icon: FileText, external: 'https://invoice-theaitel.vercel.app/' },
+  { label: 'Quotation', icon: FileSpreadsheet, external: 'https://invoice-theaitel.vercel.app/' },
   { to: '/bde/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -61,21 +63,39 @@ export default function Sidebar({ onClose }) {
 
       {/* Nav Links */}
       <nav className="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto">
-        {links.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/admin' || to === '/bde'}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? 'active' : 'text-gray-600'}`
-            }
-            onClick={onClose}
-          >
-            <Icon size={17} />
-            <span className="flex-1">{label}</span>
-            <ChevronRight size={13} className="opacity-30" />
-          </NavLink>
-        ))}
+        {links.map(({ to, label, icon: Icon, external }) => {
+          if (external) {
+            return (
+              <a
+                key={label}
+                href={external}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sidebar-link text-gray-600 hover:bg-gray-50 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm"
+                onClick={onClose}
+              >
+                <Icon size={17} />
+                <span className="flex-1">{label}</span>
+                <ChevronRight size={13} className="opacity-30" />
+              </a>
+            );
+          }
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/admin' || to === '/bde'}
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'active' : 'text-gray-600'}`
+              }
+              onClick={onClose}
+            >
+              <Icon size={17} />
+              <span className="flex-1">{label}</span>
+              <ChevronRight size={13} className="opacity-30" />
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* User + Logout */}

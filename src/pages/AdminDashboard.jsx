@@ -128,21 +128,27 @@ export default function AdminDashboard() {
           <Megaphone size={16} className="text-blue-600 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-blue-700">Meta Ads Webhook</p>
-            <p className="text-[11px] text-blue-500 truncate">
-              POST {'{backend}'}/api/webhooks/meta
+            <p className="text-[11px] text-blue-500 truncate font-mono">
+              https://aitel-lead-backend.onrender.com/api/webhooks/portal
             </p>
           </div>
-          <span className="badge bg-yellow-100 text-yellow-700 text-[10px] flex-shrink-0">Configure</span>
+          <button
+            onClick={() => { navigator.clipboard.writeText('https://aitel-lead-backend.onrender.com/api/webhooks/portal'); toast.success('Meta Webhook Copied!'); }}
+            className="badge bg-blue-100 text-blue-700 text-[10px] cursor-pointer hover:bg-blue-200"
+          >Copy</button>
         </div>
         <div className="flex items-center gap-3 px-4 py-3 bg-purple-50 border border-purple-100 rounded-xl">
           <Globe size={16} className="text-purple-600 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-purple-700">Company Portal Webhook</p>
-            <p className="text-[11px] text-purple-500 truncate">
-              POST {'{backend}'}/api/webhooks/portal
+            <p className="text-[11px] text-purple-500 truncate font-mono">
+              https://aitel-lead-backend.onrender.com/api/webhooks/portal
             </p>
           </div>
-          <span className="badge bg-yellow-100 text-yellow-700 text-[10px] flex-shrink-0">Configure</span>
+          <button
+            onClick={() => { navigator.clipboard.writeText('https://aitel-lead-backend.onrender.com/api/webhooks/portal'); toast.success('Portal Webhook Copied!'); }}
+            className="badge bg-purple-100 text-purple-700 text-[10px] cursor-pointer hover:bg-purple-200"
+          >Copy</button>
         </div>
       </div>
 

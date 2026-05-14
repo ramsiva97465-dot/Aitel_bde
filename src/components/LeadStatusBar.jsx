@@ -37,7 +37,14 @@ export default function LeadStatusBar({ statusHistory = [], currentStatus }) {
   // Always show: New → Contacted → [Callback|FollowUp if occurred] → Interested|NotInterested → Converted
   const stagesToShow = PIPELINE.filter((stage) => {
     // Always show the core happy path
-    if (stage.key === 'New' || stage.key === 'Contacted' || stage.key === 'Interested' || stage.key === 'Converted') return true;
+    if (
+      stage.key === 'New' || 
+      stage.key === 'Contacted' || 
+      stage.key === 'Interested' || 
+      stage.key === 'Quotation Raised' ||
+      stage.key === 'Invoice Raised' ||
+      stage.key === 'Converted'
+    ) return true;
     
     // Show these only if they occurred in history
     if (

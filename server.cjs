@@ -129,34 +129,44 @@ app.post('/api/webhooks/portal', async (req, res) => {
   const data = req.body;
   console.log('📬 Webhook Received:', JSON.stringify(data, null, 2));
 
-  // Determine if it's Meta or Portal
   const isMeta = data.object === 'page';
   const source = isMeta ? 'Meta Ads' : 'Company Portal';
   
-  const processedLead = {
-    customerName: isMeta ? 'New Meta Lead' : data.customerName,
-    phone: isMeta ? 'Check Meta Suite' : data.phone,
-    email: data.email || '',
-    companyName: data.companyName || '—',
-    source: source,
-    id: `web-${Date.now()}`,
-    createdAt: new Date().toISOString()
-  };
+  const customerName = isMeta ? 'New Meta Lead' : (data.customerName || data.name);
+  const phone = isMeta ? 'Check Meta Suite' : data.phone;
+  const email = data.email || '';
+  const companyName = data.companyName || '—';
+  const status = data.status || 'New';
 
-  // Save to Render PostgreSQL
+  // Smart Sync: Update existing lead OR Create new
   try {
-    const { customerName, email, phone, companyName } = processedLead;
-    await pool.query(
-      'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status) VALUES ($1, $2, $3, $4, $5, $6)',
-      [customerName, email, phone, companyName, source, processedLead.status || 'New']
+    // Check if lead exists (by email or phone)
+    const check = await pool.query(
+      'SELECT id FROM demo_requests WHERE email = $1 OR phone = $2 LIMIT 1',
+      [email, phone]
     );
-    console.log('✅ Lead saved to Render PostgreSQL from', source);
+
+    if (check.rows.length > 0) {
+      // UPDATE EXISTING
+      const leadId = check.rows[0].id;
+      await pool.query(
+        'UPDATE demo_requests SET status = $1, customer_name = $2, company_name = $3 WHERE id = $4',
+        [status, customerName, companyName, leadId]
+      );
+      console.log(`🔄 Existing Lead ${leadId} updated to ${status}`);
+    } else {
+      // INSERT NEW
+      await pool.query(
+        'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status) VALUES ($1, $2, $3, $4, $5, $6)',
+        [customerName, email, phone, companyName, source, status]
+      );
+      console.log('✅ New Lead saved to Render PostgreSQL');
+    }
   } catch (err) {
-    console.error('❌ Failed to save lead to Render:', err.message);
+    console.error('❌ Failed to sync webhook to Render:', err.message);
   }
 
-  pendingLeads.push(processedLead);
-  res.json({ success: true, message: 'Lead received and synced to Render.' });
+  res.json({ success: true, message: 'Sync complete.' });
 });
 
 // Polling Endpoint

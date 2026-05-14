@@ -171,6 +171,16 @@ initDB();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Health Check
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', database: 'connected', server: 'live', timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ status: 'error', database: 'disconnected', error: err.message });
+  }
+});
+
 // --- AUTH ENDPOINTS ---
 
 // Register

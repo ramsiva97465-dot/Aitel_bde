@@ -8,7 +8,7 @@ import { todayISO } from '../utils/dateHelpers';
 import toast from 'react-hot-toast';
 
 export default function AllLeads() {
-  const { leads, getBDEName, getBDEs, assignLead } = useLead();
+  const { leads, getBDEName, getBDEs, assignLead, addLead } = useLead();
   const { addNotification } = useNotification();
   const bdes = getBDEs();
 

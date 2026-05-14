@@ -16,7 +16,7 @@ export default function Login() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     

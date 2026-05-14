@@ -54,7 +54,9 @@ export default function AdminDashboard() {
     ['Converted', 'Invoice Raised', 'Pro-forma Raised', 'Tax Invoice Raised'].includes(l.status)
   ).length;
 
-  const recentLeads = [...leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
+  const recentLeads = [...leads]
+    .sort((a, b) => new Date(b.created_at || b.createdAt || Date.now()) - new Date(a.created_at || a.createdAt || Date.now()))
+    .slice(0, 8);
 
   const bdes = getBDEs();
   const bdePerf = bdes.map((b) => {

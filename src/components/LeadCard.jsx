@@ -14,7 +14,8 @@ export default function LeadCard({ lead, basePath = '/bde' }) {
   const navigate = useNavigate();
 
   // Build set of occurred statuses
-  const occurred = new Set((lead.statusHistory || []).map((h) => h.status));
+  const historyArray = Array.isArray(lead.statusHistory) ? lead.statusHistory : [];
+  const occurred = new Set(historyArray.map((h) => h && h.status));
   const isCurrent = (key) => lead.status === key;
   const isDone = (key) => occurred.has(key) && !isCurrent(key);
 

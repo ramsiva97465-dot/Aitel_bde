@@ -30,10 +30,11 @@ export const LeadProvider = ({ children }) => {
   useEffect(() => {
     if (!supabase) return;
 
-    // 1. Initial Fetch from Render via Local Bridge
+    // 1. Initial Fetch from Render via Local or Production Bridge
     const fetchLeads = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/leads');
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        const response = await fetch(`${backendUrl}/api/leads`);
         const data = await response.json();
         
         if (data && Array.isArray(data)) {

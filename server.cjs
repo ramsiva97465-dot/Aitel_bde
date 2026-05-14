@@ -72,6 +72,43 @@ const initDB = async () => {
       ON CONFLICT (email) DO NOTHING
     `);
 
+    // 3. Invoices Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id SERIAL PRIMARY KEY,
+        lead_id INTEGER,
+        invoice_number TEXT UNIQUE,
+        amount DECIMAL,
+        status TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 4. Quotations Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quotations (
+        id SERIAL PRIMARY KEY,
+        lead_id INTEGER,
+        quotation_number TEXT UNIQUE,
+        amount DECIMAL,
+        status TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 5. Notifications Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT,
+        title TEXT,
+        message TEXT,
+        type TEXT,
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     console.log('✅ DATABASE SYNC: Render PostgreSQL is ALIVE!');
   } catch (err) {
     console.error('❌ DATABASE SYNC FAILED:', err.message);
@@ -270,6 +307,32 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// Update User
+app.patch('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, role, phone } = req.body;
+  try {
+    await pool.query(
+      'UPDATE users SET name = $1, role = $2, phone = $3 WHERE id = $4',
+      [name, role, phone, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete User
+app.delete('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Fetching Endpoint for Dashboard
 app.get('/api/leads', async (req, res) => {
   try {
@@ -315,6 +378,86 @@ app.get('/api/followups', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM follow_ups');
     res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Invoices
+app.post('/api/invoices', async (req, res) => {
+  const { leadId, invoiceNumber, amount, status } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO invoices (lead_id, invoice_number, amount, status) VALUES ($1, $2, $3, $4) RETURNING *',
+      [leadId, invoiceNumber, amount, status]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/invoices', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM invoices ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Quotations
+app.post('/api/quotations', async (req, res) => {
+  const { leadId, quotationNumber, amount, status } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO quotations (lead_id, quotation_number, amount, status) VALUES ($1, $2, $3, $4) RETURNING *',
+      [leadId, quotationNumber, amount, status]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/quotations', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM quotations ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Notifications
+app.post('/api/notifications', async (req, res) => {
+  const { userId, title, message, type } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4) RETURNING *',
+      [userId, title, message, type]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/notifications/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query('SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/notifications/:id/read', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('UPDATE notifications SET is_read = true WHERE id = $1', [id]);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

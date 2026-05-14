@@ -57,9 +57,17 @@ export const LeadProvider = ({ children }) => {
         // 3. Fetch Followups
         const fRes = await fetch(`${backendUrl}/api/followups`);
         const fData = await fRes.json();
-        if (fData && Array.isArray(fData)) {
-          setFollowUps(fData);
-        }
+        if (fData && Array.isArray(fData)) setFollowUps(fData);
+
+        // 4. Fetch Invoices
+        const invRes = await fetch(`${backendUrl}/api/invoices`);
+        const invData = await invRes.json();
+        if (invData && Array.isArray(invData)) setInvoices(invData);
+
+        // 5. Fetch Quotations
+        const qRes = await fetch(`${backendUrl}/api/quotations`);
+        const qData = await qRes.json();
+        if (qData && Array.isArray(qData)) setQuotations(qData);
       } catch (err) {
         console.warn('Bridge fetch failed:', err.message);
       }
@@ -215,18 +223,60 @@ export const LeadProvider = ({ children }) => {
   };
 
   // ---- USERS / BDE ----
-  const addUser = (user) => {
-    setUsers((prev) => [...prev, user]);
+  const addUser = async (user) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user.name,
+          email: user.email,
+          password: user.password || 'welcome123',
+          phone: user.phone,
+          role: user.role || 'bde'
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to register user');
+      const savedUser = await response.json();
+      setUsers((prev) => [...prev, savedUser]);
+      return savedUser;
+    } catch (err) {
+      console.error('❌ User Addition Failed:', err.message);
+    }
   };
 
-  const updateUser = (userId, updates) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, ...updates } : u))
-    );
+  const updateUser = async (userId, updates) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) throw new Error('Failed to update user');
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, ...updates } : u))
+      );
+    } catch (err) {
+      console.error('❌ User Update Failed:', err.message);
+    }
   };
 
-  const deleteUser = (userId) => {
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  const deleteUser = async (userId) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/users/${userId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete user');
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (err) {
+      console.error('❌ User Deletion Failed:', err.message);
+    }
   };
 
   const updateMonthlyGoal = (goal) => {
@@ -235,27 +285,63 @@ export const LeadProvider = ({ children }) => {
   };
 
   // ---- INVOICES ----
-  const addInvoice = (invoiceData) => {
-    const invoice = {
-      ...invoiceData,
-      id: `inv${invoices.length + 1}`,
-      invoiceNumber: generateInvoiceNumber(invoices),
-      createdAt: todayISO(),
-    };
-    setInvoices((prev) => [...prev, invoice]);
-    return invoice;
+  const addInvoice = async (invoiceData) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const invoice = {
+        ...invoiceData,
+        invoiceNumber: generateInvoiceNumber(invoices),
+        status: invoiceData.status || 'Sent'
+      };
+
+      const response = await fetch(`${backendUrl}/api/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: invoice.leadId,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          status: invoice.status
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to save invoice');
+      const saved = await response.json();
+      setInvoices((prev) => [...prev, saved]);
+      return saved;
+    } catch (err) {
+      console.error('❌ Invoice Save Failed:', err.message);
+    }
   };
 
   // ---- QUOTATIONS ----
-  const addQuotation = (quotData) => {
-    const quotation = {
-      ...quotData,
-      id: `q${quotations.length + 1}`,
-      quotationNumber: generateQuotationNumber(quotations),
-      createdAt: todayISO(),
-    };
-    setQuotations((prev) => [...prev, quotation]);
-    return quotation;
+  const addQuotation = async (quotData) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const quotation = {
+        ...quotData,
+        quotationNumber: generateQuotationNumber(quotations),
+        status: quotData.status || 'Sent'
+      };
+
+      const response = await fetch(`${backendUrl}/api/quotations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: quotation.leadId,
+          quotationNumber: quotation.quotationNumber,
+          amount: quotation.amount,
+          status: quotation.status
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to save quotation');
+      const saved = await response.json();
+      setQuotations((prev) => [...prev, saved]);
+      return saved;
+    } catch (err) {
+      console.error('❌ Quotation Save Failed:', err.message);
+    }
   };
 
   // ---- HELPERS ----

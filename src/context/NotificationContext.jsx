@@ -1,32 +1,78 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import { NOTIFICATIONS as INITIAL } from '../data/seedData';
 
 const NotificationContext = createContext(null);
 
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState(INITIAL);
+  const { currentUser } = useAuth();
+  const [notifications, setNotifications] = useState([]);
 
-  const addNotification = (notif) => {
-    setNotifications((prev) => [notif, ...prev]);
+  useEffect(() => {
+    if (currentUser) {
+      fetchNotifications(currentUser.id);
+    } else {
+      setNotifications([]);
+    }
+  }, [currentUser]);
+
+  const addNotification = async (notif) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: notif.userId,
+          title: notif.title,
+          message: notif.message,
+          type: notif.type
+        })
+      });
+      if (response.ok) {
+        const saved = await response.json();
+        setNotifications((prev) => [saved, ...prev]);
+      }
+    } catch (err) {
+      console.error('❌ Notification Save Failed:', err.message);
+    }
   };
 
-  const markRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+  const fetchNotifications = async (userId) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/notifications/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error('❌ Notification Fetch Failed:', err.message);
+    }
+  };
+
+  const markRead = async (id) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      await fetch(`${backendUrl}/api/notifications/${id}/read`, { method: 'PATCH' });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (err) {
+      console.error('❌ Mark Read Failed:', err.message);
+    }
   };
 
   const markAllRead = (userId) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.userId === userId ? { ...n, isRead: true } : n))
-    );
+    // Implement bulk mark read API if needed, for now just local + loop
+    notifications.filter(n => n.user_id === userId && !n.is_read).forEach(n => markRead(n.id));
   };
 
   const getForUser = (userId) =>
-    notifications.filter((n) => n.userId === userId);
+    notifications.filter((n) => String(n.user_id) === String(userId));
 
   const getUnreadCount = (userId) =>
-    notifications.filter((n) => n.userId === userId && !n.isRead).length;
+    notifications.filter((n) => String(n.user_id) === String(userId) && !n.is_read).length;
 
   return (
     <NotificationContext.Provider

@@ -199,13 +199,7 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Development Quick Fill (Only show on Login) */}
-          {!isRegistering && (
-            <div className="mt-12 pt-8 border-t border-gray-100 flex justify-between gap-4 opacity-40 hover:opacity-100 transition-opacity">
-              <button onClick={fillAdmin} className="text-[10px] uppercase font-black text-gray-400 hover:text-brand-600 tracking-widest transition-colors">Demo Admin</button>
-              <button onClick={() => fillBDE(1)} className="text-[10px] uppercase font-black text-gray-400 hover:text-brand-600 tracking-widest transition-colors">Demo Executive</button>
-            </div>
-          )}
+          {/* Development Quick Fill removed for Production */}
         </div>
       </div>
 

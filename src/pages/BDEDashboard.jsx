@@ -28,7 +28,10 @@ export default function BDEDashboard() {
   const statusCount = (s) => allMyLeads.filter((l) => l.status === s).length;
   
   // Performance Calculations
-  const convertedCount = statusCount('Converted');
+  const convertedCount = allMyLeads.filter((l) => 
+    ['Converted', 'Invoice Raised', 'Pro-forma Raised', 'Tax Invoice Raised'].includes(l.status)
+  ).length;
+
   const totalLeads = allMyLeads.length;
   const conversionRate = totalLeads > 0 ? Math.round((convertedCount / totalLeads) * 100) : 0;
   

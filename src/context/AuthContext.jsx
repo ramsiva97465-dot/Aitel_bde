@@ -4,7 +4,10 @@ import { USERS } from '../data/seedData';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('leadpilot_user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [error, setError] = useState('');
 
   const login = async (email, password) => {
@@ -22,6 +25,7 @@ export const AuthProvider = ({ children }) => {
 
       const user = await response.json();
       setCurrentUser(user);
+      localStorage.setItem('leadpilot_user', JSON.stringify(user));
       return user;
     } catch (err) {
       setError(err.message);
@@ -31,6 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('leadpilot_user');
     setError('');
   };
 

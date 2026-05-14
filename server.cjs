@@ -147,10 +147,10 @@ app.post('/api/webhooks/portal', async (req, res) => {
   try {
     const { customerName, email, phone, companyName } = processedLead;
     await pool.query(
-      'INSERT INTO demo_requests (name, email, phone, company, source, status) VALUES ($1, $2, $3, $4, $5, $6)',
-      [customerName, email, phone, companyName, source, 'New']
+      'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status) VALUES ($1, $2, $3, $4, $5, $6)',
+      [customerName, email, phone, companyName, source, processedLead.status || 'New']
     );
-    console.log('✅ Lead saved to Render PostgreSQL');
+    console.log('✅ Lead saved to Render PostgreSQL from', source);
   } catch (err) {
     console.error('❌ Failed to save lead to Render:', err.message);
   }

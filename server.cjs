@@ -381,7 +381,7 @@ app.post('/api/leads', async (req, res) => {
 // Update Lead (Status, Assignment, etc.)
 app.patch('/api/leads/:id', async (req, res) => {
   const { id } = req.params;
-  const { status, assigned_to } = req.body;
+  const { status, assigned_to, status_history } = req.body;
   try {
     let query = 'UPDATE demo_requests SET ';
     const params = [];
@@ -393,6 +393,15 @@ app.patch('/api/leads/:id', async (req, res) => {
       params.push(assigned_to);
       query += `assigned_to = $${params.length}, `;
     }
+    if (status_history) {
+      params.push(JSON.stringify(status_history));
+      query += `status_history = $${params.length}::jsonb, `;
+    }
+    
+    if (params.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
     query = query.slice(0, -2); // Remove trailing comma
     params.push(id);
     query += ` WHERE id = $${params.length} RETURNING *`;
@@ -498,11 +507,11 @@ app.get('/api/followups', async (req, res) => {
 
 // Invoices
 app.post('/api/invoices', async (req, res) => {
-  const { leadId, invoiceNumber, amount, status } = req.body;
+  const { leadId, invoiceNumber, serviceName, quantity, price, tax, total, status } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO invoices (lead_id, invoice_number, amount, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [leadId, invoiceNumber, amount, status]
+      'INSERT INTO invoices (lead_id, invoice_number, service_name, quantity, price, tax, total, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [leadId, invoiceNumber, serviceName, quantity, price, tax, total, status]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -521,11 +530,11 @@ app.get('/api/invoices', async (req, res) => {
 
 // Quotations
 app.post('/api/quotations', async (req, res) => {
-  const { leadId, quotationNumber, amount, status } = req.body;
+  const { leadId, quotationNumber, serviceName, quantity, price, tax, total, status } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO quotations (lead_id, quotation_number, amount, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [leadId, quotationNumber, amount, status]
+      'INSERT INTO quotations (lead_id, quotation_number, service_name, quantity, price, tax, total, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [leadId, quotationNumber, serviceName, quantity, price, tax, total, status]
     );
     res.json(result.rows[0]);
   } catch (err) {

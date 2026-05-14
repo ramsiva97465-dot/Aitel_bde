@@ -309,7 +309,11 @@ export const LeadProvider = ({ children }) => {
         body: JSON.stringify({
           leadId: invoice.leadId,
           invoiceNumber: invoice.invoiceNumber,
-          amount: invoice.amount,
+          serviceName: invoice.serviceName,
+          quantity: invoice.quantity,
+          price: invoice.price,
+          tax: invoice.tax,
+          total: invoice.total,
           status: invoice.status
         })
       });
@@ -345,7 +349,11 @@ export const LeadProvider = ({ children }) => {
         body: JSON.stringify({
           leadId: quotation.leadId,
           quotationNumber: quotation.quotationNumber,
-          amount: quotation.amount,
+          serviceName: quotation.serviceName,
+          quantity: quotation.quantity,
+          price: quotation.price,
+          tax: quotation.tax,
+          total: quotation.total,
           status: quotation.status
         })
       });

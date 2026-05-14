@@ -6,6 +6,7 @@ import LeadTable from '../components/LeadTable';
 import {
   Users, PhoneCall, TrendingUp, Star, XCircle, RotateCcw, Repeat2,
   Megaphone, Globe, CheckCircle, MessageSquare, RefreshCw, PhoneMissed,
+  FileText, FileSpreadsheet,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

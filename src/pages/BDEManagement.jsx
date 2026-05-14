@@ -9,12 +9,20 @@ export default function BDEManagement() {
   const bdes = getBDEs();
 
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', status: 'active' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', status: 'active' });
   const [editingId, setEditingId] = useState(null);
 
   const handleSave = async () => {
     if (!form.name || !form.email) {
       toast.error('Name and Email are required.');
+      return;
+    }
+    if (!editingId && !form.password) {
+      toast.error('Please set a login password for this executive.');
+      return;
+    }
+    if (!editingId && form.password.length < 6) {
+      toast.error('Password must be at least 6 characters.');
       return;
     }
     try {
@@ -124,7 +132,7 @@ export default function BDEManagement() {
       </div>
 
       {showAdd && (
-        <Modal title={editingId ? 'Edit Executive' : 'Add New Executive'} onClose={() => { setShowAdd(false); setEditingId(null); setForm({ name: '', email: '', phone: '', status: 'active' }); }}>
+        <Modal title={editingId ? 'Edit Executive' : 'Add New Executive'} onClose={() => { setShowAdd(false); setEditingId(null); setForm({ name: '', email: '', phone: '', password: '', status: 'active' }); }}>
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Full Name</label>
@@ -156,6 +164,19 @@ export default function BDEManagement() {
                 />
               </div>
             </div>
+            {!editingId && (
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Login Password</label>
+                <input
+                  type="password"
+                  className="input-field"
+                  placeholder="Set a login password (min 6 chars)"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+                <p className="text-xs text-gray-400 mt-1 ml-1">BDE will use this password to login to their portal.</p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Account Status</label>
               <select

@@ -35,12 +35,12 @@ export default function BDEDashboard() {
   const totalLeads = allMyLeads.length;
   const conversionRate = totalLeads > 0 ? Math.round((convertedCount / totalLeads) * 100) : 0;
   
-  const targetProgress = Math.min(Math.round((convertedCount / monthlyGoal) * 100), 100);
+  const targetProgress = monthlyGoal > 0 ? Math.min(Math.round((convertedCount / monthlyGoal) * 100), 100) : 0;
 
   // Recent Activity Feed
   const recentActivity = allMyLeads
-    .flatMap(l => l.statusHistory.map(h => ({ ...h, customerName: l.customerName })))
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .flatMap(l => (Array.isArray(l.statusHistory) ? l.statusHistory : []).map(h => ({ ...h, customerName: l.customerName })))
+    .sort((a, b) => new Date(b.date || Date.now()) - new Date(a.date || Date.now()))
     .slice(0, 4);
 
   useEffect(() => {

@@ -72,6 +72,16 @@ const initDB = async () => {
       ON CONFLICT (email) DO NOTHING
     `);
 
+    // ---- SAFE MIGRATIONS (add missing columns to existing tables) ----
+    // Add phone column to users if missing
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
+    // Add notes column to demo_requests if missing
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS notes JSONB DEFAULT '[]'`);
+    // Add status_history column to demo_requests if missing
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'`);
+    // Add assigned_to column to demo_requests if missing
+    await pool.query(`ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS assigned_to TEXT`);
+
     // 3. Invoices Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS invoices (

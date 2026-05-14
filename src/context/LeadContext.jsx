@@ -34,20 +34,28 @@ export const LeadProvider = ({ children }) => {
     const fetchLeads = async () => {
       try {
         const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-        const response = await fetch(`${backendUrl}/api/leads`);
-        const data = await response.json();
         
-        if (data && Array.isArray(data)) {
-          const mappedLeads = data.map(l => ({
+        // 1. Fetch Leads
+        const lRes = await fetch(`${backendUrl}/api/leads`);
+        const lData = await lRes.json();
+        if (lData && Array.isArray(lData)) {
+          const mappedLeads = lData.map(l => ({
             ...l,
-            customerName: l.name,
-            companyName: l.company,
+            customerName: l.customer_name,
+            companyName: l.company_name,
             statusHistory: l.statusHistory || [{ status: l.status, date: l.created_at, updatedBy: 'System' }]
           }));
           setLeads(mappedLeads);
         }
+
+        // 2. Fetch Users
+        const uRes = await fetch(`${backendUrl}/api/users`);
+        const uData = await uRes.json();
+        if (uData && Array.isArray(uData)) {
+          setUsers(uData);
+        }
       } catch (err) {
-        console.warn('Bridge fetch failed (ensure node server.cjs is running)');
+        console.warn('Bridge fetch failed:', err.message);
       }
     };
 
@@ -82,68 +90,51 @@ export const LeadProvider = ({ children }) => {
 
   // ---- LEADS ----
   const updateLeadStatus = async (leadId, status, notes, updatedByName) => {
-    // 1. Update Supabase
-    if (supabase) {
-      const { error } = await supabase
-        .from('demo_requests')
-        .update({ 
-          status, 
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', leadId);
-
-      if (error) {
-        console.error('Error updating lead in Supabase:', error);
-      }
-    }
-
-    // 2. Update local state
-    setLeads((prev) => {
-      const updatedLeads = prev.map((l) => {
-        if (l.id !== leadId) return l;
-        const historyEntry = {
-          status,
-          date: todayISO(),
-          updatedBy: updatedByName,
-          notes: notes || '',
-        };
-        return { ...l, status, statusHistory: [...l.statusHistory, historyEntry] };
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
       });
 
-      // AUTO-FILL PIPELINE LOGIC
-      // If the new status is a "Final" state (Converted or Not Interested),
-      // find the BDE for this lead and see if we should pull from their queue.
-      const finalStates = ['Converted', 'Not Interested'];
-      if (finalStates.includes(status)) {
-        const lead = prev.find(l => l.id === leadId);
-        const bdeId = lead.assignedTo;
-        if (bdeId) {
-          const bdeLeads = updatedLeads.filter(l => l.assignedTo === bdeId);
-          const activeStatuses = ['New', 'Contacted', 'Interested', 'Callback', 'Follow Up', 'Call Not Answered'];
-          const activeCount = bdeLeads.filter(l => activeStatuses.includes(l.status)).length;
-          
-          if (activeCount < 5) {
-            // Pull the next one from 'In Queue'
-            const nextInQueue = bdeLeads.find(l => l.status === 'In Queue');
-            if (nextInQueue) {
-              return updatedLeads.map(l => 
-                l.id === nextInQueue.id 
-                  ? { ...l, status: 'New', statusHistory: [...l.statusHistory, { status: 'New', date: todayISO(), updatedBy: 'System', notes: 'Auto-filled from Queue' }] } 
-                  : l
-              );
-            }
-          }
-        }
-      }
+      if (!response.ok) throw new Error('Failed to update lead in database');
 
-      return updatedLeads;
-    });
+      // Update local state
+      setLeads((prev) => {
+        return prev.map((l) => {
+          if (l.id !== leadId) return l;
+          const historyEntry = {
+            status,
+            date: todayISO(),
+            updatedBy: updatedByName,
+            notes: notes || '',
+          };
+          return { ...l, status, statusHistory: [...(l.statusHistory || []), historyEntry] };
+        });
+      });
+    } catch (err) {
+      console.error('❌ Status Update Failed:', err.message);
+    }
   };
 
-  const assignLead = (leadId, bdeId) => {
-    setLeads((prev) =>
-      prev.map((l) => (l.id === leadId ? { ...l, assignedTo: bdeId, isSeen: false } : l))
-    );
+  const assignLead = async (leadId, bdeId) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_to: bdeId })
+      });
+
+      if (!response.ok) throw new Error('Failed to assign lead in database');
+
+      setLeads((prev) =>
+        prev.map((l) => (l.id === leadId ? { ...l, assignedTo: bdeId, isSeen: false } : l))
+      );
+    } catch (err) {
+      console.error('❌ Assignment Failed:', err.message);
+    }
   };
 
   const autoDistribute = () => {
@@ -163,28 +154,50 @@ export const LeadProvider = ({ children }) => {
     );
   };
 
-  const addLead = (lead) => {
-    const bdes = users.filter(u => u.role === 'bde');
-    let assignedTo = lead.assignedTo;
+  const addLead = async (lead) => {
+    try {
+      const bdes = users.filter(u => u.role === 'bde');
+      let assignedTo = lead.assignedTo;
 
-    // AUTO-ASSIGN: If it's a new lead (e.g. from Meta/Portal) with no BDE, use Round-Robin
-    if (!assignedTo && bdes.length > 0) {
-      assignedTo = bdes[nextBDEIndex % bdes.length].id;
-      setNextBDEIndex(prev => (prev + 1) % bdes.length);
+      // AUTO-ASSIGN logic
+      if (!assignedTo && bdes.length > 0) {
+        assignedTo = bdes[nextBDEIndex % bdes.length].id;
+        setNextBDEIndex(prev => (prev + 1) % bdes.length);
+      }
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: lead.customerName,
+          email: lead.email,
+          phone: lead.phone,
+          company_name: lead.companyName,
+          requirement: lead.requirement,
+          source: lead.source || 'Manual',
+          status: lead.status || 'In Queue',
+          assigned_to: assignedTo
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to save manual lead to database');
+      const savedLead = await response.json();
+
+      const newLead = {
+        ...savedLead,
+        customerName: savedLead.customer_name,
+        companyName: savedLead.company_name,
+        statusHistory: [{ status: savedLead.status, date: todayISO(), updatedBy: 'System', notes: 'Lead Created' }],
+        notes: [],
+        isSeen: false
+      };
+
+      setLeads((prev) => [...prev, newLead]);
+      return newLead;
+    } catch (err) {
+      console.error('❌ Manual Lead Save Failed:', err.message);
     }
-
-    const newLead = {
-      ...lead,
-      id: lead.id || `l-${Date.now()}`,
-      assignedTo,
-      status: lead.status || 'In Queue',
-      statusHistory: lead.statusHistory || [{ status: 'In Queue', date: todayISO(), updatedBy: 'System', notes: 'Lead Created in Queue' }],
-      notes: lead.notes || [],
-      isSeen: false
-    };
-
-    setLeads((prev) => [...prev, newLead]);
-    return newLead;
   };
 
   // ---- FOLLOWUPS ----

@@ -22,12 +22,19 @@ export default function Login() {
     
     try {
       if (isRegistering) {
-        // Handle Registration logic
-        console.log('Registering:', { name, email, phone, password });
-        toast.success('Registration request sent to Admin!');
+        // Real Database Registration
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, phone, role: 'admin' })
+        });
+
+        if (!response.ok) throw new Error('Registration failed. Email might already exist.');
+
+        toast.success('Admin Account Created Successfully!');
         setIsRegistering(false);
       } else {
-        const user = login(email, password);
+        const user = await login(email, password);
         if (user) {
           if (user.role === 'admin') navigate('/admin');
           else navigate('/bde');

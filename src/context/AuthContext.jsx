@@ -7,16 +7,24 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState('');
 
-  const login = (email, password) => {
-    const user = USERS.find(
-      (u) => u.email === email && u.password === password
-    );
-    if (user) {
+  const login = async (email, password) => {
+    setError('');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid email or password');
+      }
+
+      const user = await response.json();
       setCurrentUser(user);
-      setError('');
       return user;
-    } else {
-      setError('Invalid email or password.');
+    } catch (err) {
+      setError(err.message);
       return null;
     }
   };

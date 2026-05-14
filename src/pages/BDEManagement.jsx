@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLead } from '../context/LeadContext';
 import Modal from '../components/Modal';
 import { Users, UserPlus, Mail, Phone, Shield, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
@@ -6,15 +6,11 @@ import toast from 'react-hot-toast';
 
 export default function BDEManagement() {
   const { getBDEs, addUser, updateUser, deleteUser, leads } = useLead();
-  const [bdes, setBdes] = useState([]);
-  
+  const bdes = getBDEs();
+
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', status: 'active' });
   const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    setBdes(getBDEs());
-  }, [getBDEs, leads]);
 
   const handleSave = async () => {
     if (!form.name || !form.email) {

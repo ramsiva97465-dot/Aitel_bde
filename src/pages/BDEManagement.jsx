@@ -6,27 +6,35 @@ import toast from 'react-hot-toast';
 
 export default function BDEManagement() {
   const { getBDEs, addUser, updateUser, deleteUser, leads } = useLead();
-  const bdes = getBDEs();
+  const [bdes, setBdes] = useState([]);
   
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', status: 'active' });
   const [editingId, setEditingId] = useState(null);
 
-  const handleSave = () => {
+  useEffect(() => {
+    setBdes(getBDEs());
+  }, [getBDEs, leads]);
+
+  const handleSave = async () => {
     if (!form.name || !form.email) {
       toast.error('Name and Email are required.');
       return;
     }
-    if (editingId) {
-      updateUser(editingId, form);
-      toast.success('Executive updated successfully.');
-    } else {
-      addUser({ ...form, id: `u${Date.now()}`, role: 'bde' });
-      toast.success('New Executive added.');
+    try {
+      if (editingId) {
+        await updateUser(editingId, form);
+        toast.success('Executive updated successfully.');
+      } else {
+        await addUser({ ...form, role: 'bde' });
+        toast.success('New Executive added.');
+      }
+      setShowAdd(false);
+      setEditingId(null);
+      setForm({ name: '', email: '', phone: '', status: 'active' });
+    } catch (err) {
+      toast.error('Failed to save executive.');
     }
-    setShowAdd(false);
-    setEditingId(null);
-    setForm({ name: '', email: '', phone: '', status: 'active' });
   };
 
   const handleEdit = (b) => {

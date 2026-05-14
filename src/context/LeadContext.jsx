@@ -15,7 +15,7 @@ const LeadContext = createContext(null);
 
 export const LeadProvider = ({ children }) => {
   const [leads, setLeads] = useState([]); // Real leads only - no mock data
-  const [users, setUsers] = useState(USERS);
+  const [users, setUsers] = useState([]);
   const [followUps, setFollowUps] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [quotations, setQuotations] = useState([]);

@@ -13,6 +13,20 @@ import toast from 'react-hot-toast';
 export default function AdminDashboard() {
   const { leads, getBDEName, getBDEs, addLead } = useLead();
   const [syncing, setSyncing] = useState(false);
+  const [dbStatus, setDbStatus] = useState('Checking...');
+
+  useEffect(() => {
+    const checkConn = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/leads`);
+        if (res.ok) setDbStatus('Live ✅');
+        else setDbStatus('Error ❌');
+      } catch (err) {
+        setDbStatus('Disconnected ❌');
+      }
+    };
+    checkConn();
+  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -61,7 +75,14 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
-          <p className="text-sm text-gray-500">Overview of all telecalling leads and Business Development Executive performance</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-gray-500">Overview of all telecalling leads and BDE performance</p>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+              dbStatus.includes('Live') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}>
+              Database: {dbStatus}
+            </span>
+          </div>
         </div>
         <button
           id="sync-leads-btn"

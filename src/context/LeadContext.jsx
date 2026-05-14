@@ -26,57 +26,62 @@ export const LeadProvider = ({ children }) => {
   // Performance Goals (Admin Set)
   const [monthlyGoal, setMonthlyGoal] = useState(Number(localStorage.getItem('bde_monthly_goal')) || 20);
 
-  // ---- SUPABASE INTEGRATION ----
-  useEffect(() => {
-    if (!supabase) return;
+  // ---- CORE DATA FETCH (runs on mount + every 30s) ----
+  const fetchAllData = async () => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-    // 1. Initial Fetch from Render via Local or Production Bridge
-    const fetchLeads = async () => {
-      try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-        
-        // 1. Fetch Leads
-        const lRes = await fetch(`${backendUrl}/api/leads`);
+      // 1. Leads
+      const lRes = await fetch(`${backendUrl}/api/leads`);
+      if (lRes.ok) {
         const lData = await lRes.json();
-        if (lData && Array.isArray(lData)) {
-          const mappedLeads = lData.map(l => ({
+        if (Array.isArray(lData)) {
+          setLeads(lData.map(l => ({
             ...l,
             customerName: l.customer_name,
             companyName: l.company_name,
-            statusHistory: l.statusHistory || [{ status: l.status, date: l.created_at, updatedBy: 'System' }]
-          }));
-          setLeads(mappedLeads);
+            assignedTo: l.assigned_to,
+            notes: l.notes || [],
+            statusHistory: l.status_history || [{ status: l.status, date: l.created_at, updatedBy: 'System' }]
+          })));
         }
-
-        // 2. Fetch Users
-        const uRes = await fetch(`${backendUrl}/api/users`);
-        const uData = await uRes.json();
-        if (uData && Array.isArray(uData)) {
-          setUsers(uData);
-        }
-        // 3. Fetch Followups
-        const fRes = await fetch(`${backendUrl}/api/followups`);
-        const fData = await fRes.json();
-        if (fData && Array.isArray(fData)) setFollowUps(fData);
-
-        // 4. Fetch Invoices
-        const invRes = await fetch(`${backendUrl}/api/invoices`);
-        const invData = await invRes.json();
-        if (invData && Array.isArray(invData)) setInvoices(invData);
-
-        // 5. Fetch Quotations
-        const qRes = await fetch(`${backendUrl}/api/quotations`);
-        const qData = await qRes.json();
-        if (qData && Array.isArray(qData)) setQuotations(qData);
-      } catch (err) {
-        console.warn('Bridge fetch failed:', err.message);
       }
-    };
 
-    fetchLeads();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchLeads, 30000);
+      // 2. Users / Executives
+      const uRes = await fetch(`${backendUrl}/api/users`);
+      if (uRes.ok) {
+        const uData = await uRes.json();
+        if (Array.isArray(uData)) setUsers(uData);
+      }
+
+      // 3. Follow-ups
+      const fRes = await fetch(`${backendUrl}/api/followups`);
+      if (fRes.ok) {
+        const fData = await fRes.json();
+        if (Array.isArray(fData)) setFollowUps(fData);
+      }
+
+      // 4. Invoices
+      const invRes = await fetch(`${backendUrl}/api/invoices`);
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        if (Array.isArray(invData)) setInvoices(invData);
+      }
+
+      // 5. Quotations
+      const qRes = await fetch(`${backendUrl}/api/quotations`);
+      if (qRes.ok) {
+        const qData = await qRes.json();
+        if (Array.isArray(qData)) setQuotations(qData);
+      }
+    } catch (err) {
+      console.warn('⚠️ Data fetch failed:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData(); // Load everything on start
+    const interval = setInterval(fetchAllData, 30000); // Refresh every 30s
     return () => clearInterval(interval);
   }, []);
 
@@ -239,11 +244,12 @@ export const LeadProvider = ({ children }) => {
       });
 
       if (!response.ok) throw new Error('Failed to register user');
-      const savedUser = await response.json();
-      setUsers((prev) => [...prev, savedUser]);
-      return savedUser;
+      // Re-fetch all users from DB so UI updates immediately
+      await fetchAllData();
+      return true;
     } catch (err) {
       console.error('❌ User Addition Failed:', err.message);
+      throw err;
     }
   };
 

@@ -54,6 +54,12 @@ export const LeadProvider = ({ children }) => {
         if (uData && Array.isArray(uData)) {
           setUsers(uData);
         }
+        // 3. Fetch Followups
+        const fRes = await fetch(`${backendUrl}/api/followups`);
+        const fData = await fRes.json();
+        if (fData && Array.isArray(fData)) {
+          setFollowUps(fData);
+        }
       } catch (err) {
         console.warn('Bridge fetch failed:', err.message);
       }
@@ -64,38 +70,23 @@ export const LeadProvider = ({ children }) => {
     // Refresh every 30 seconds
     const interval = setInterval(fetchLeads, 30000);
     return () => clearInterval(interval);
-
-    // 2. Real-time Listener (Supabase)
-    const channel = supabase
-      .channel('db-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'demo_requests' },
-        (payload) => {
-          console.log('🆕 Supabase Lead:', payload.new);
-          addLead({
-            ...payload.new,
-            customerName: payload.new.name,
-            companyName: payload.new.company,
-            statusHistory: [{ status: 'New', date: payload.new.created_at, updatedBy: 'System' }]
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   // ---- LEADS ----
   const updateLeadStatus = async (leadId, status, notes, updatedByName) => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const historyEntry = {
+        status,
+        date: todayISO(),
+        updatedBy: updatedByName,
+        notes: notes || '',
+      };
+
       const response = await fetch(`${backendUrl}/api/leads/${leadId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, status_history: [...(getLeadById(leadId)?.statusHistory || []), historyEntry] })
       });
 
       if (!response.ok) throw new Error('Failed to update lead in database');
@@ -104,12 +95,6 @@ export const LeadProvider = ({ children }) => {
       setLeads((prev) => {
         return prev.map((l) => {
           if (l.id !== leadId) return l;
-          const historyEntry = {
-            status,
-            date: todayISO(),
-            updatedBy: updatedByName,
-            notes: notes || '',
-          };
           return { ...l, status, statusHistory: [...(l.statusHistory || []), historyEntry] };
         });
       });
@@ -144,27 +129,32 @@ export const LeadProvider = ({ children }) => {
     return assignmentSummary;
   };
 
-  const addNoteToLead = (leadId, noteText, authorName) => {
-    setLeads((prev) =>
-      prev.map((l) => {
-        if (l.id !== leadId) return l;
-        const note = { text: noteText, createdAt: todayISO(), by: authorName };
-        return { ...l, notes: [...l.notes, note] };
-      })
-    );
+  const addNoteToLead = async (leadId, noteText, authorName) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const note = { text: noteText, createdAt: todayISO(), by: authorName };
+      
+      const response = await fetch(`${backendUrl}/api/leads/${leadId}/notes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note })
+      });
+
+      if (!response.ok) throw new Error('Failed to save note');
+
+      setLeads((prev) =>
+        prev.map((l) => {
+          if (l.id !== leadId) return l;
+          return { ...l, notes: [...l.notes, note] };
+        })
+      );
+    } catch (err) {
+      console.error('❌ Note Save Failed:', err.message);
+    }
   };
 
   const addLead = async (lead) => {
     try {
-      const bdes = users.filter(u => u.role === 'bde');
-      let assignedTo = lead.assignedTo;
-
-      // AUTO-ASSIGN logic
-      if (!assignedTo && bdes.length > 0) {
-        assignedTo = bdes[nextBDEIndex % bdes.length].id;
-        setNextBDEIndex(prev => (prev + 1) % bdes.length);
-      }
-
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
       const response = await fetch(`${backendUrl}/api/leads`, {
         method: 'POST',
@@ -177,7 +167,7 @@ export const LeadProvider = ({ children }) => {
           requirement: lead.requirement,
           source: lead.source || 'Manual',
           status: lead.status || 'In Queue',
-          assigned_to: assignedTo
+          assigned_to: lead.assignedTo
         })
       });
 
@@ -201,8 +191,27 @@ export const LeadProvider = ({ children }) => {
   };
 
   // ---- FOLLOWUPS ----
-  const addFollowUp = (followup) => {
-    setFollowUps((prev) => [...prev, followup]);
+  const addFollowUp = async (followup) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/followups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: followup.leadId,
+          bdeId: followup.bdeId,
+          date: followup.date,
+          time: followup.time,
+          notes: followup.notes
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to save follow-up');
+      const savedFollowup = await response.json();
+      setFollowUps((prev) => [...prev, savedFollowup]);
+    } catch (err) {
+      console.error('❌ Follow-up Save Failed:', err.message);
+    }
   };
 
   // ---- USERS / BDE ----

@@ -32,6 +32,22 @@ const initDB = async () => {
         source TEXT,
         status TEXT DEFAULT 'New',
         assigned_to TEXT,
+        status_history JSONB DEFAULT '[]',
+        notes JSONB DEFAULT '[]',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 2. Follow-ups Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS follow_ups (
+        id SERIAL PRIMARY KEY,
+        lead_id INTEGER,
+        bde_id TEXT,
+        date TEXT,
+        time TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'Pending',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -141,6 +157,27 @@ app.post('/api/webhooks/portal', async (req, res) => {
   // Smart Sync: Update existing lead OR Create new
   try {
     // Check if lead exists (by email or phone)
+    // Smart Sync: Update existing lead OR Create new with Auto-Assignment
+    // Get all BDEs for auto-assignment
+    const bdeList = await pool.query('SELECT id FROM users WHERE role = $1', ['bde']);
+    let autoAssignedTo = null;
+
+    if (bdeList.rows.length > 0) {
+      // Find the BDE with the fewest leads (Simple balancing)
+      const workloadRes = await pool.query(`
+        SELECT u.id, COUNT(d.id) as lead_count 
+        FROM users u 
+        LEFT JOIN demo_requests d ON u.id = d.assigned_to 
+        WHERE u.role = 'bde' 
+        GROUP BY u.id 
+        ORDER BY lead_count ASC 
+        LIMIT 1
+      `);
+      if (workloadRes.rows.length > 0) {
+        autoAssignedTo = workloadRes.rows[0].id;
+      }
+    }
+
     const check = await pool.query(
       'SELECT id FROM demo_requests WHERE email = $1 OR phone = $2 LIMIT 1',
       [email, phone]
@@ -155,12 +192,12 @@ app.post('/api/webhooks/portal', async (req, res) => {
       );
       console.log(`🔄 Existing Lead ${leadId} updated to ${status}`);
     } else {
-      // INSERT NEW
+      // INSERT NEW (Auto-Assigned)
       await pool.query(
-        'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status) VALUES ($1, $2, $3, $4, $5, $6)',
-        [customerName, email, phone, companyName, source, status]
+        'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [customerName, email, phone, companyName, source, status, autoAssignedTo]
       );
-      console.log('✅ New Lead saved to Render PostgreSQL');
+      console.log('✅ New Lead Auto-Assigned to BDE:', autoAssignedTo);
     }
   } catch (err) {
     console.error('❌ Failed to sync webhook to Render:', err.message);
@@ -241,6 +278,45 @@ app.get('/api/leads', async (req, res) => {
   } catch (err) {
     console.error('❌ Failed to fetch leads from Render:', err.message);
     res.status(500).json({ error: 'Database fetch failed' });
+  }
+});
+
+// Add Note to Lead
+app.patch('/api/leads/:id/notes', async (req, res) => {
+  const { id } = req.params;
+  const { note } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE demo_requests SET notes = notes || $1::jsonb WHERE id = $2 RETURNING notes',
+      [JSON.stringify(note), id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Follow-ups
+app.post('/api/followups', async (req, res) => {
+  const { leadId, bdeId, date, time, notes } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO follow_ups (lead_id, bde_id, date, time, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [leadId, bdeId, date, time, notes]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('❌ Follow-up Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/followups', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM follow_ups');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

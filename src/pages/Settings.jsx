@@ -24,7 +24,7 @@ export default function Settings() {
   const [integrations, setIntegrations] = useState({
     metaAppId: localStorage.getItem('meta_app_id') || import.meta.env.VITE_META_APP_ID || '',
     metaToken: localStorage.getItem('meta_ads_token') || import.meta.env.VITE_META_ACCESS_TOKEN || '',
-    portalUrl: localStorage.getItem('portal_webhook_url') || 'https://rhombic-marlyn-unintrudingly.ngrok-free.dev/api/webhooks/portal',
+    portalUrl: localStorage.getItem('portal_webhook_url') || 'https://aitel-lead-backend.onrender.com/api/webhooks/portal',
     verifyToken: localStorage.getItem('meta_verify_token') || import.meta.env.VITE_META_VERIFY_TOKEN || 'aitel_meta_verify_2026',
     autoAssign: localStorage.getItem('auto_assign_enabled') === 'true'
   });

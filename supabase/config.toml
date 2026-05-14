@@ -1,0 +1,3 @@
+# Supabase Config for demo-request function
+[functions.demo-request]
+verify_jwt = false # Required for public access from theaitel.com

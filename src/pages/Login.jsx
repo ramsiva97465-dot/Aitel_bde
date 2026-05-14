@@ -11,6 +11,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Tabs: 'admin' or 'bde'
+  const [activeTab, setActiveTab] = useState('bde');
 
   const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState('');
@@ -36,13 +39,24 @@ export default function Login() {
       } else {
         const user = await login(email, password);
         if (user) {
+          if (activeTab === 'admin' && user.role !== 'admin') {
+            toast.error('Access Denied: You are not an Admin.');
+            logout();
+            return;
+          }
+          if (activeTab === 'bde' && user.role !== 'bde') {
+            toast.error('Access Denied: Please use the Admin Portal.');
+            logout();
+            return;
+          }
+
           if (user.role === 'admin') navigate('/admin');
           else navigate('/bde');
         }
       }
     } catch (err) {
       console.error(err);
-      toast.error('Something went wrong!');
+      toast.error(err.message || 'Something went wrong!');
     } finally {
       setLoading(false);
     }
@@ -71,12 +85,38 @@ export default function Login() {
             <h2 className="text-4xl font-bold text-brand-600 tracking-tighter">LeadPilot</h2>
           </div>
 
+          {/* Portal Tabs */}
+          {!isRegistering && (
+            <div className="flex p-1 mb-8 bg-gray-100 rounded-xl">
+              <button
+                onClick={() => setActiveTab('bde')}
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
+                  activeTab === 'bde' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Executive Portal
+              </button>
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
+                  activeTab === 'admin' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Admin Portal
+              </button>
+            </div>
+          )}
+
           <div className="mb-10 text-center">
-            <h1 className="text-4xl font-extrabold text-gray-700 mb-2">
-              {isRegistering ? 'Admin Registration' : 'Welcome back'}
+            <h1 className="text-3xl font-extrabold text-gray-700 mb-2">
+              {isRegistering ? 'Admin Registration' : activeTab === 'admin' ? 'Admin Login' : 'Executive Login'}
             </h1>
-            <p className="text-gray-500 font-medium">
-              {isRegistering ? 'Request access to the Administrative Panel.' : 'Please enter your details.'}
+            <p className="text-gray-500 font-medium text-sm">
+              {isRegistering 
+                ? 'Request access to the Administrative Panel.' 
+                : activeTab === 'admin' 
+                  ? 'Manage your team and track pipeline.' 
+                  : 'Welcome back. Let\'s close some deals!'}
             </p>
           </div>
 
@@ -188,15 +228,22 @@ export default function Login() {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500 font-medium">
-              {isRegistering ? 'Already have an account?' : "Don't have an account?"} {' '}
-              <button 
-                onClick={() => setIsRegistering(!isRegistering)}
-                className="text-brand-600 font-bold hover:underline"
-              >
-                {isRegistering ? 'Sign In' : 'Admin Register'}
-              </button>
-            </p>
+            {activeTab === 'admin' && (
+              <p className="text-sm text-gray-500 font-medium">
+                {isRegistering ? 'Already have an account?' : "Don't have an admin account?"} {' '}
+                <button 
+                  onClick={() => setIsRegistering(!isRegistering)}
+                  className="text-brand-600 font-bold hover:underline"
+                >
+                  {isRegistering ? 'Sign In' : 'Register Here'}
+                </button>
+              </p>
+            )}
+            {activeTab === 'bde' && !isRegistering && (
+              <p className="text-xs text-gray-400 font-medium">
+                Executives cannot register themselves. Please contact your Admin for login credentials.
+              </p>
+            )}
           </div>
 
           {/* Development Quick Fill removed for Production */}

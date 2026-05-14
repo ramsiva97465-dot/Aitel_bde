@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLead } from '../context/LeadContext';
 import StatCard from '../components/StatCard';
 import LeadTable from '../components/LeadTable';
@@ -78,9 +78,9 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2">
             <p className="text-sm text-gray-500">Overview of all telecalling leads and BDE performance</p>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-              dbStatus.includes('Live') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              dbStatus?.includes('Live') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             }`}>
-              Database: {dbStatus}
+              Database: {dbStatus || 'Checking...'}
             </span>
           </div>
         </div>

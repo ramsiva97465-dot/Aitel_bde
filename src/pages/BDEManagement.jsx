@@ -29,7 +29,12 @@ export default function BDEManagement() {
       setEditingId(null);
       setForm({ name: '', email: '', phone: '', status: 'active' });
     } catch (err) {
-      toast.error('Failed to save executive.');
+      const msg = err.message || 'Failed to save executive.';
+      if (msg.toLowerCase().includes('email')) {
+        toast.error('This email is already registered. Please use a different email.');
+      } else {
+        toast.error(msg);
+      }
     }
   };
 

@@ -243,7 +243,10 @@ export const LeadProvider = ({ children }) => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to register user');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to register user');
+      }
       // Re-fetch all users from DB so UI updates immediately
       await fetchAllData();
       return true;

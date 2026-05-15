@@ -46,11 +46,11 @@ export default function FollowUpAlarm() {
           const gainNode = audioCtx.createGain();
           oscillator.type = 'sine';
           oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-          gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime); // LOUDEST
           oscillator.connect(gainNode);
           gainNode.connect(audioCtx.destination);
           oscillator.start();
-          setTimeout(() => oscillator.stop(), 200);
+          setTimeout(() => oscillator.stop(), 500); // Longer beep for alarm
         } catch (err) {
           console.warn('Audio play failed:', err);
         }

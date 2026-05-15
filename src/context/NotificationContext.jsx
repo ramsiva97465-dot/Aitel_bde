@@ -17,14 +17,27 @@ export const NotificationProvider = ({ children }) => {
       const gainNode = audioCtx.createGain();
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+      gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime); // LOUDER
 
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
 
       oscillator.start();
-      setTimeout(() => oscillator.stop(), 200);
+      setTimeout(() => oscillator.stop(), 300);
+      
+      // Second Beep
+      setTimeout(() => {
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain2.gain.setValueAtTime(0.8, audioCtx.currentTime);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start();
+        setTimeout(() => osc2.stop(), 300);
+      }, 400);
     } catch (e) {
       console.warn('Audio play failed:', e);
     }

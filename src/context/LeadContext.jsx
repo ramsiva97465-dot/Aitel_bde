@@ -59,7 +59,13 @@ export const LeadProvider = ({ children }) => {
       const fRes = await fetch(`${backendUrl}/api/followups`);
       if (fRes.ok) {
         const fData = await fRes.json();
-        if (Array.isArray(fData)) setFollowUps(fData);
+        if (Array.isArray(fData)) {
+          setFollowUps(fData.map(f => ({
+            ...f,
+            bdeId: f.bde_id,
+            leadId: f.lead_id
+          })));
+        }
       }
 
       // 4. Invoices

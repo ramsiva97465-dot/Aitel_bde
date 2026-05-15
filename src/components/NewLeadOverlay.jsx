@@ -14,7 +14,8 @@ export default function NewLeadOverlay() {
   const navigate = useNavigate();
   const [activeLead, setActiveLead] = useState(null);
 
-    // 1. Find the MOST RECENT lead that is still in the Queue and assigned to this BDE
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'bde') return;
     const pendingLead = leads
       .filter(l => l.assignedTo == currentUser.id && l.status === 'In Queue')
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];

@@ -42,6 +42,7 @@ export const LeadProvider = ({ children }) => {
             companyName: l.company_name,
             assignedTo: l.assigned_to,
             createdAt: l.created_at,
+            isSeen: l.is_seen,
             notes: l.notes || [],
             statusHistory: l.status_history || [{ status: l.status, date: l.created_at, updatedBy: 'System' }]
           })));
@@ -410,10 +411,16 @@ export const LeadProvider = ({ children }) => {
 
   const getBDEs = () => users.filter((u) => u.role === 'bde');
 
-  const markLeadSeen = (leadId) => {
-    setLeads((prev) =>
-      prev.map((l) => (l.id == leadId ? { ...l, isSeen: true } : l))
-    );
+  const markLeadSeen = async (leadId) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      await fetch(`${backendUrl}/api/leads/${leadId}/seen`, { method: 'PATCH' });
+      setLeads((prev) =>
+        prev.map((l) => (l.id == leadId ? { ...l, isSeen: true } : l))
+      );
+    } catch (err) {
+      console.error('❌ Mark Seen Failed:', err.message);
+    }
   };
 
   return (

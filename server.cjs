@@ -594,6 +594,16 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
   }
 });
 
+app.patch('/api/leads/:id/seen', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('UPDATE demo_requests SET is_seen = true WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const server = app.listen(PORT, () => {
   console.log(`🚀 Local Webhook Bridge active on http://localhost:${PORT}`);
 });

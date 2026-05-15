@@ -49,7 +49,13 @@ function RequireBDE({ children }) {
 }
 
 function AppRoutes() {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+
+  // Safety check: If user exists in localStorage but has no role, force logout to clear the loop
+  if (currentUser && !currentUser.role) {
+    logout();
+    return <Login />;
+  }
 
   return (
     <Routes>
@@ -58,7 +64,11 @@ function AppRoutes() {
         path="/"
         element={
           currentUser
-            ? <Navigate to={currentUser.role === 'admin' ? '/admin' : '/bde'} replace />
+            ? currentUser.role === 'admin' 
+              ? <Navigate to="/admin" replace /> 
+              : currentUser.role === 'bde'
+                ? <Navigate to="/bde" replace />
+                : <Login /> // If role is missing/null, just show login
             : <Login />
         }
       />

@@ -42,15 +42,14 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [currentUser]);
 
-  // Alert trigger on new unread notifs
+  // Alert trigger on new unread notifs - ONLY for BDEs
   useEffect(() => {
     const unreadCount = getUnreadCount(currentUser?.id);
-    if (unreadCount > lastCount) {
+    if (unreadCount > lastCount && currentUser?.role === 'bde') {
       playBeep();
-      // We'll let the UI handle the overlay by checking getUnreadCount
     }
     setLastCount(unreadCount);
-  }, [notifications]);
+  }, [notifications, currentUser]);
 
   const addNotification = async (notif) => {
     try {

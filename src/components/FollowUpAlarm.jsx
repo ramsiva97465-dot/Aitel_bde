@@ -15,7 +15,7 @@ export default function FollowUpAlarm() {
   const [activeAlarm, setActiveAlarm] = useState(null);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || currentUser.role !== 'bde') return;
 
     const checkInterval = setInterval(() => {
       const now = new Date();

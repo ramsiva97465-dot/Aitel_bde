@@ -20,10 +20,18 @@ export default function NewLeadOverlay() {
     // Find first lead that is assigned to this BDE and NOT seen yet
     const unseen = leads.find(l => l.assignedTo == currentUser.id && l.isSeen === false);
 
-    if (unseen && (!activeLead || activeLead.id !== unseen.id)) {
-      setActiveLead(unseen);
-      
-      // Play Notification Sound (Beep)
+    if (unseen) {
+      // Check if we already alerted for this lead recently
+      const lastAlertKey = `last_alert_${unseen.id}`;
+      const lastAlertTime = localStorage.getItem(lastAlertKey);
+      const thirtyMinutes = 30 * 60 * 1000;
+      const isNewLead = !activeLead || activeLead.id !== unseen.id;
+
+      if (isNewLead || !lastAlertTime || Date.now() - Number(lastAlertTime) > thirtyMinutes) {
+        setActiveLead(unseen);
+        localStorage.setItem(lastAlertKey, Date.now().toString());
+        
+        // Play Notification Sound (Beep)
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();

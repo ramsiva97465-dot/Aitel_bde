@@ -435,6 +435,9 @@ export const LeadProvider = ({ children }) => {
       setInvoices((prev) => prev.filter((i) => i.lead_id != leadId && i.leadId != leadId));
       setQuotations((prev) => prev.filter((q) => q.lead_id != leadId && q.leadId != leadId));
       
+      // Force a full re-fetch to be 100% sure we are synced with DB
+      setTimeout(fetchAllData, 1000);
+      
       return true;
     } catch (err) {
       console.error('❌ Delete Lead Failed:', err.message);

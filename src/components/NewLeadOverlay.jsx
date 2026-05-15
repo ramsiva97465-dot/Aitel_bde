@@ -67,6 +67,8 @@ export default function NewLeadOverlay() {
           icon: '/favicon.ico'
         });
       }
+        }
+      }
     }
   }, [leads, currentUser, activeLead]);
 

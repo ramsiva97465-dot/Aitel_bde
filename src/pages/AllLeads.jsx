@@ -28,79 +28,58 @@ export default function AllLeads() {
         userId: bdeId,
         title: 'New Lead Assigned',
         message: `Lead "${lead?.customerName}" has been directly assigned to you.`,
-        type: 'lead_assigned',
-        isRead: false,
-        createdAt: todayISO(),
       });
-      toast.success(`Assigned to ${bde?.name}`);
-    } else {
-      toast(`Lead "${lead?.customerName}" unassigned.`, { icon: '↩️' });
     }
   };
 
-  const filtered = leads.filter((l) => {
-    const q = search.toLowerCase();
-    const matchSearch =
-      !q ||
-      l.customerName.toLowerCase().includes(q) ||
-      l.phone.includes(q) ||
-      l.companyName.toLowerCase().includes(q);
-    const matchSource = !sourceFilter || l.source === sourceFilter;
-    const matchStatus = !statusFilter || l.status === statusFilter;
-    const matchBde = !bdeFilter || l.assignedTo === bdeFilter;
-    return matchSearch && matchSource && matchStatus && matchBde;
-  });
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newLead, setNewLead] = useState({
-    customerName: '', phone: '', email: '', companyName: '', requirement: '', source: 'Manual'
-  });
-
-  const handleAddLead = async (e) => {
-    e.preventDefault();
-    await addLead(newLead);
-    setIsModalOpen(false);
-    setNewLead({ customerName: '', phone: '', email: '', companyName: '', requirement: '', source: 'Manual' });
-    toast.success('Lead Added Successfully!');
+  const handleDeleteLead = async (leadId) => {
+    toast.promise(deleteLead(leadId), {
+      loading: 'Deleting lead...',
+      success: 'Lead deleted successfully!',
+      error: 'Failed to delete lead. Please try again.',
+    });
   };
 
+  const filtered = leads.filter((l) => {
+    const matchesSearch =
+      l.customerName?.toLowerCase().includes(search.toLowerCase()) ||
+      l.phone?.includes(search) ||
+      l.companyName?.toLowerCase().includes(search.toLowerCase());
+    const matchesSource = sourceFilter ? l.source === sourceFilter : true;
+    const matchesStatus = statusFilter ? l.status === statusFilter : true;
+    const matchesBDE = bdeFilter ? String(l.assignedTo) === bdeFilter : true;
+    return matchesSearch && matchesSource && matchesStatus && matchesBDE;
+  });
+
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-800">All Leads</h1>
-          <p className="text-sm text-gray-500">
-            Showing {filtered.length} of {leads.length} leads
-          </p>
+          <h1 className="text-2xl font-black text-brand-600 tracking-tight">All Leads</h1>
+          <p className="text-sm text-gray-500 font-medium">Showing {filtered.length} of {leads.length} leads</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
+        <button
+          id="add-lead-btn"
+          onClick={() => {
+            const name = prompt('Enter customer name:');
+            if (name) {
+              addLead({
+                customerName: name,
+                email: '',
+                phone: prompt('Enter phone:'),
+                companyName: prompt('Enter company:'),
+                source: 'Manual',
+                status: 'In Queue',
+                createdAt: todayISO(),
+              });
+            }
+          }}
           className="btn-primary flex items-center gap-2"
         >
-          <Search size={14} className="rotate-45" />
+          <Search size={18} />
           Add New Lead
         </button>
       </div>
-
-      {/* Add Lead Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl scale-in">
-            <h2 className="text-xl font-black text-gray-800 mb-6">Add New Lead</h2>
-            <form onSubmit={handleAddLead} className="space-y-4">
-              <input required className="input-field" placeholder="Customer Name" value={newLead.customerName} onChange={e => setNewLead({...newLead, customerName: e.target.value})} />
-              <input required className="input-field" placeholder="Phone" value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} />
-              <input className="input-field" placeholder="Email" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} />
-              <input className="input-field" placeholder="Company Name" value={newLead.companyName} onChange={e => setNewLead({...newLead, companyName: e.target.value})} />
-              <textarea className="input-field" placeholder="Requirement" value={newLead.requirement} onChange={e => setNewLead({...newLead, requirement: e.target.value})} />
-              <div className="flex gap-3 pt-2">
-                <button type="submit" className="btn-primary flex-1">Save Lead</button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="card">
@@ -132,7 +111,7 @@ export default function AllLeads() {
           {/* Status */}
           <select
             id="leads-status-filter"
-            className="input-field w-44"
+            className="input-field w-40"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -143,7 +122,7 @@ export default function AllLeads() {
           {/* BDE */}
           <select
             id="leads-bde-filter"
-            className="input-field w-44"
+            className="input-field w-40"
             value={bdeFilter}
             onChange={(e) => setBdeFilter(e.target.value)}
           >
@@ -177,7 +156,7 @@ export default function AllLeads() {
           basePath="/admin"
           isAdmin
           onDirectAssign={handleDirectAssign}
-          onDelete={deleteLead}
+          onDelete={handleDeleteLead}
         />
       </div>
     </div>

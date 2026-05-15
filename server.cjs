@@ -604,6 +604,19 @@ app.patch('/api/leads/:id/seen', async (req, res) => {
   }
 });
 
+app.delete('/api/leads/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM demo_requests WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+    res.json({ success: true, message: 'Lead deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const server = app.listen(PORT, () => {
   console.log(`🚀 Local Webhook Bridge active on http://localhost:${PORT}`);
 });

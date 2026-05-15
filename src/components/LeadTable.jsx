@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import { formatDate } from '../utils/dateHelpers';
-import { Eye, UserCheck } from 'lucide-react';
+import { Eye, UserCheck, Trash2 } from 'lucide-react';
 
 /**
  * LeadTable
@@ -23,9 +23,17 @@ export default function LeadTable({
   showAssign,
   onAssign,
   onDirectAssign,
+  onDelete,
   isAdmin = false,
 }) {
   const navigate = useNavigate();
+
+  const handleDelete = (leadId, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
+      onDelete(leadId);
+    }
+  };
 
   if (!leads.length) {
     return (
@@ -94,6 +102,15 @@ export default function LeadTable({
                     >
                       <Eye size={16} />
                     </button>
+                    {isAdmin && onDelete && (
+                      <button
+                        onClick={(e) => handleDelete(lead.id, e)}
+                        className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all active:scale-95"
+                        title="Delete Lead"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                 </div>
               </td>
             </tr>

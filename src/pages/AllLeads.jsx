@@ -8,7 +8,7 @@ import { todayISO } from '../utils/dateHelpers';
 import toast from 'react-hot-toast';
 
 export default function AllLeads() {
-  const { leads, getBDEName, getBDEs, assignLead, addLead } = useLead();
+  const { leads, getBDEName, getBDEs, assignLead, addLead, deleteLead } = useLead();
   const { addNotification } = useNotification();
   const bdes = getBDEs();
 
@@ -176,6 +176,7 @@ export default function AllLeads() {
           basePath="/admin"
           isAdmin
           onDirectAssign={handleDirectAssign}
+          onDelete={deleteLead}
         />
       </div>
     </div>

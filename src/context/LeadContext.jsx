@@ -423,6 +423,20 @@ export const LeadProvider = ({ children }) => {
     }
   };
 
+  const deleteLead = async (leadId) => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/leads/${leadId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      
+      setLeads((prev) => prev.filter((l) => l.id != leadId));
+      return true;
+    } catch (err) {
+      console.error('❌ Delete Lead Failed:', err.message);
+      return false;
+    }
+  };
+
   return (
     <LeadContext.Provider
       value={{
@@ -447,6 +461,7 @@ export const LeadProvider = ({ children }) => {
         getLeadsForBDE,
         getBDEs,
         markLeadSeen,
+        deleteLead,
         monthlyGoal,
         updateMonthlyGoal,
       }}

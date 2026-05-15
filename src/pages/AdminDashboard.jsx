@@ -60,7 +60,7 @@ export default function AdminDashboard() {
 
   const bdes = getBDEs();
   const bdePerf = bdes.map((b) => {
-    const bl = leads.filter((l) => l.assignedTo === b.id);
+    const bl = leads.filter((l) => l.assignedTo == b.id);
     return {
       name: b.name,
       assigned: bl.length,

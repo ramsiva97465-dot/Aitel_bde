@@ -429,7 +429,12 @@ export const LeadProvider = ({ children }) => {
       const res = await fetch(`${backendUrl}/api/leads/${leadId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       
+      // Update local state for all related data
       setLeads((prev) => prev.filter((l) => l.id != leadId));
+      setFollowUps((prev) => prev.filter((f) => f.lead_id != leadId));
+      setInvoices((prev) => prev.filter((i) => i.lead_id != leadId));
+      setQuotations((prev) => prev.filter((q) => q.lead_id != leadId));
+      
       return true;
     } catch (err) {
       console.error('❌ Delete Lead Failed:', err.message);

@@ -607,11 +607,19 @@ app.patch('/api/leads/:id/seen', async (req, res) => {
 app.delete('/api/leads/:id', async (req, res) => {
   const { id } = req.params;
   try {
+    // 1. Delete associated data first to maintain integrity
+    await pool.query('DELETE FROM follow_ups WHERE lead_id = $1', [id]);
+    await pool.query('DELETE FROM invoices WHERE lead_id = $1', [id]);
+    await pool.query('DELETE FROM quotations WHERE lead_id = $1', [id]);
+    await pool.query('DELETE FROM lead_notes WHERE lead_id = $1', [id]);
+    
+    // 2. Delete the lead itself
     const result = await pool.query('DELETE FROM demo_requests WHERE id = $1', [id]);
+    
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Lead not found' });
     }
-    res.json({ success: true, message: 'Lead deleted successfully' });
+    res.json({ success: true, message: 'Lead and all associated data deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

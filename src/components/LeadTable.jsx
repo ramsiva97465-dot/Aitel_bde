@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import { formatDate } from '../utils/dateHelpers';
-import { Eye, UserCheck, Trash2 } from 'lucide-react';
+import { Eye, UserCheck, Trash2, AlertTriangle } from 'lucide-react';
+import Modal from './Modal';
 
 /**
  * LeadTable
@@ -27,11 +29,17 @@ export default function LeadTable({
   isAdmin = false,
 }) {
   const navigate = useNavigate();
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // stores leadId being deleted
 
   const handleDelete = (leadId, e) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
-      onDelete(leadId);
+    setDeleteConfirm(leadId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      onDelete(deleteConfirm);
+      setDeleteConfirm(null);
     }
   };
 
@@ -117,6 +125,38 @@ export default function LeadTable({
           ))}
         </tbody>
       </table>
+
+      {deleteConfirm && (
+        <Modal 
+          title="Confirm Deletion" 
+          onClose={() => setDeleteConfirm(null)}
+          maxWidth="max-w-sm"
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={32} />
+            </div>
+            <h4 className="text-lg font-bold text-gray-800 mb-2">Are you sure?</h4>
+            <p className="text-sm text-gray-500 mb-8">
+              This action will permanently delete the lead and all its associated data. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

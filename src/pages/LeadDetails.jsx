@@ -146,19 +146,7 @@ export default function LeadDetails() {
           </div>
         </div>
 
-        {/* EXTERNAL INVOICE INTEGRATION BUTTON */}
-        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
-          <button 
-            onClick={() => {
-              const url = `https://invoice-theaitel.vercel.app/?leadId=${lead.id}&customerName=${encodeURIComponent(lead.customerName)}&phone=${lead.phone}&email=${lead.email}`;
-              window.open(url, '_blank');
-            }}
-            className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl font-black text-sm tracking-tighter shadow-xl shadow-emerald-600/20 transition-all active:scale-95 group"
-          >
-            <FileText size={20} className="group-hover:rotate-12 transition-transform" />
-            GENERATE OFFICIAL INVOICE
-          </button>
-        </div>
+
       </div>
 
       {/* ===== LEAD STATUS PROGRESS BAR ===== */}

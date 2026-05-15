@@ -7,14 +7,50 @@ const NotificationContext = createContext(null);
 export const NotificationProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const [notifications, setNotifications] = useState([]);
+  const [lastCount, setLastCount] = useState(0);
+
+  // Sound Helper
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 200);
+    } catch (e) {
+      console.warn('Audio play failed:', e);
+    }
+  };
 
   useEffect(() => {
     if (currentUser) {
       fetchNotifications(currentUser.id);
+      // Setup Polling
+      const interval = setInterval(() => fetchNotifications(currentUser.id), 5000);
+      return () => clearInterval(interval);
     } else {
       setNotifications([]);
+      setLastCount(0);
     }
   }, [currentUser]);
+
+  // Alert trigger on new unread notifs
+  useEffect(() => {
+    const unreadCount = getUnreadCount(currentUser?.id);
+    if (unreadCount > lastCount) {
+      playBeep();
+      // We'll let the UI handle the overlay by checking getUnreadCount
+    }
+    setLastCount(unreadCount);
+  }, [notifications]);
 
   const addNotification = async (notif) => {
     try {

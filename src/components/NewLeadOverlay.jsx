@@ -18,18 +18,25 @@ export default function NewLeadOverlay() {
     if (!currentUser || currentUser.role !== 'bde') return;
 
     // Find first lead that is assigned to this BDE and NOT seen yet
-    const unseen = leads.find(l => l.assignedTo === currentUser.id && l.isSeen === false);
+    const unseen = leads.find(l => l.assignedTo == currentUser.id && l.isSeen === false);
 
     if (unseen && (!activeLead || activeLead.id !== unseen.id)) {
       setActiveLead(unseen);
       
       // Play Notification Sound (Beep)
       try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.volume = 0.5;
-        audio.play();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), 200);
       } catch (err) {
-        console.warn('Audio play failed (waiting for user interaction):', err);
+        console.warn('Audio play failed:', err);
       }
       
       // Browser Desktop Notification

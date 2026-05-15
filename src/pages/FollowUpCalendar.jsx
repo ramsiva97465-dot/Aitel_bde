@@ -13,7 +13,7 @@ export default function FollowUpCalendar() {
 
   const myFollowUps = isAdmin
     ? followUps
-    : followUps.filter((f) => f.bdeId === currentUser?.id);
+    : followUps.filter((f) => f.bdeId == currentUser?.id);
 
   const [filter, setFilter] = useState('all');
 

@@ -29,22 +29,30 @@ export default function FollowUpAlarm() {
         if (f.status !== 'Pending') return false;
         
         // Only show for the assigned BDE
-        if (currentUser.role === 'bde' && f.bdeId !== currentUser.id) return false;
+        // Only show for the assigned BDE
+        if (currentUser.role === 'bde' && f.bdeId != currentUser.id) return false;
 
         return f.date === today && f.time === currentTime;
       });
 
       if (due && (!activeAlarm || activeAlarm.id !== due.id)) {
-        const lead = leads.find(l => l.id === due.leadId);
+        const lead = leads.find(l => l.id == due.leadId);
         setActiveAlarm({ ...due, leadName: lead?.customerName || 'Unknown Lead', leadPhone: lead?.phone });
         
         // Play Notification Sound (Beep)
         try {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-          audio.volume = 0.6; // Slightly higher for alarms
-          audio.play();
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          oscillator.start();
+          setTimeout(() => oscillator.stop(), 200);
         } catch (err) {
-          console.warn('Audio play failed (waiting for user interaction):', err);
+          console.warn('Audio play failed:', err);
         }
 
         // Browser Desktop Notification

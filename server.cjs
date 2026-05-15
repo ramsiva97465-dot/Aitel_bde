@@ -239,6 +239,21 @@ app.get('/api/webhooks/portal', (req, res) => {
   res.status(403).send('Verification failed');
 });
 
+// Round Robin Helper
+async function getNextBDE() {
+  const bdeRes = await pool.query(`
+    SELECT id FROM users 
+    WHERE role = 'bde' AND status = 'active'
+    ORDER BY last_assigned_at ASC NULLS FIRST LIMIT 1
+  `);
+  if (bdeRes.rows.length > 0) {
+    const bdeId = bdeRes.rows[0].id;
+    await pool.query('UPDATE users SET last_assigned_at = CURRENT_TIMESTAMP WHERE id = $1', [bdeId]);
+    return bdeId;
+  }
+  return null;
+}
+
 // Webhook Endpoint (POST)
 app.post('/api/webhooks/portal', async (req, res) => {
   const data = req.body;
@@ -251,7 +266,11 @@ app.post('/api/webhooks/portal', async (req, res) => {
   const phone = isMeta ? 'Check Meta Suite' : (data.phone || '');
   const email = data.email || '';
   const companyName = data.companyName || '—';
-  let status = data.status || 'New';
+  let status = data.status || 'In Queue';
+
+  // ══════════════════════════════════════════
+  // INVOICE / QUOTATION WEBHOOK HANDLER
+  // ══════════════════════════════════════════
 
   // ══════════════════════════════════════════
   // INVOICE / QUOTATION WEBHOOK HANDLER
@@ -306,28 +325,6 @@ app.post('/api/webhooks/portal', async (req, res) => {
 
   // Smart Sync: Update existing lead OR Create new
   try {
-    // Check if lead exists (by email or phone)
-    // Smart Sync: Update existing lead OR Create new with Auto-Assignment
-    // Get all BDEs for auto-assignment
-    const bdeList = await pool.query('SELECT id FROM users WHERE role = $1', ['bde']);
-    let autoAssignedTo = null;
-
-    if (bdeList.rows.length > 0) {
-      // Find the BDE with the fewest leads (Simple balancing)
-      const workloadRes = await pool.query(`
-        SELECT u.id, COUNT(d.id) as lead_count 
-        FROM users u 
-        LEFT JOIN demo_requests d ON u.id = d.assigned_to 
-        WHERE u.role = 'bde' 
-        GROUP BY u.id 
-        ORDER BY lead_count ASC 
-        LIMIT 1
-      `);
-      if (workloadRes.rows.length > 0) {
-        autoAssignedTo = workloadRes.rows[0].id;
-      }
-    }
-
     const check = await pool.query(
       'SELECT id FROM demo_requests WHERE email = $1 OR phone = $2 LIMIT 1',
       [email, phone]
@@ -340,14 +337,14 @@ app.post('/api/webhooks/portal', async (req, res) => {
         'UPDATE demo_requests SET status = $1, customer_name = $2, company_name = $3 WHERE id = $4',
         [status, customerName, companyName, leadId]
       );
-      console.log(`🔄 Existing Lead ${leadId} updated to ${status}`);
     } else {
-      // INSERT NEW (Auto-Assigned)
+      // INSERT NEW (Auto-Assigned to Queue via Round Robin)
+      const autoAssignedTo = await getNextBDE();
       await pool.query(
         'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [customerName, email, phone, companyName, source, status, autoAssignedTo]
+        [customerName, email, phone, companyName, source, 'In Queue', autoAssignedTo]
       );
-      console.log('✅ New Lead Auto-Assigned to BDE:', autoAssignedTo);
+      console.log('✅ New Webhook Lead Round-Robin Assigned to BDE:', autoAssignedTo);
     }
   } catch (err) {
     console.error('❌ Failed to sync webhook to Render:', err.message);
@@ -367,9 +364,18 @@ app.get('/api/leads/pending', (req, res) => {
 app.post('/api/leads', async (req, res) => {
   const { customer_name, email, phone, company_name, requirement, source, status, assigned_to } = req.body;
   try {
+    let finalAssignedTo = assigned_to;
+    let finalStatus = status || 'New';
+
+    // If no BDE assigned manually, use Round Robin and put in Queue
+    if (!finalAssignedTo) {
+      finalAssignedTo = await getNextBDE();
+      finalStatus = 'In Queue';
+    }
+
     const result = await pool.query(
       'INSERT INTO demo_requests (customer_name, email, phone, company_name, requirement, source, status, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [customer_name, email, phone, company_name, requirement, source || 'Manual', status || 'New', assigned_to]
+      [customer_name, email, phone, company_name, requirement, source || 'Manual', finalStatus, finalAssignedTo]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

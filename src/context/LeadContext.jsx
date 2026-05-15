@@ -111,6 +111,22 @@ export const LeadProvider = ({ children }) => {
           return { ...l, status, statusHistory: [...(l.statusHistory || []), historyEntry] };
         });
       });
+
+      // Auto-Promotion Logic: If a lead is finished, promote one from queue
+      const finalStatuses = ['Converted', 'Not Interested', 'Invoice Raised', 'Pro-forma Raised', 'Tax Invoice Raised'];
+      if (finalStatuses.includes(status)) {
+        const myLeads = leads.filter(l => l.assignedTo === currentUser?.id);
+        const activeCount = myLeads.filter(l => l.status !== 'In Queue' && !finalStatuses.includes(l.status)).length;
+        
+        // If we have space in pipeline (limit 10), and there are leads in queue
+        if (activeCount < 10) {
+          const nextInQueue = myLeads.find(l => l.status === 'In Queue');
+          if (nextInQueue) {
+            // Promote nextInQueue to 'New'
+            await updateLeadStatus(nextInQueue.id, 'New', 'System Auto', 'Auto-promoted from Queue');
+          }
+        }
+      }
     } catch (err) {
       console.error('❌ Status Update Failed:', err.message);
     }

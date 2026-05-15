@@ -33,15 +33,19 @@ function RequireAuth({ children }) {
 function RequireAdmin({ children }) {
   const { currentUser } = useAuth();
   if (!currentUser) return <Navigate to="/" replace />;
-  if (currentUser.role !== 'admin') return <Navigate to="/bde" replace />;
-  return children;
+  if (currentUser.role === 'admin') return children;
+  if (currentUser.role === 'bde') return <Navigate to="/bde" replace />;
+  // If role is null or anything else, don't loop! Send to login.
+  return <Navigate to="/" replace />;
 }
 
 function RequireBDE({ children }) {
   const { currentUser } = useAuth();
   if (!currentUser) return <Navigate to="/" replace />;
-  if (currentUser.role !== 'bde') return <Navigate to="/admin" replace />;
-  return children;
+  if (currentUser.role === 'bde') return children;
+  if (currentUser.role === 'admin') return <Navigate to="/admin" replace />;
+  // If role is null or anything else, don't loop! Send to login.
+  return <Navigate to="/" replace />;
 }
 
 function AppRoutes() {

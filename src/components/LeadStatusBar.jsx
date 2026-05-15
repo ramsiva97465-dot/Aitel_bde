@@ -34,8 +34,17 @@ export default function LeadStatusBar({ statusHistory = [], currentStatus }) {
   });
 
   // Determine which stages to show in the bar
-  // Always show: New → Contacted → [Callback|FollowUp if occurred] → Interested|NotInterested → Converted
   const stagesToShow = PIPELINE.filter((stage) => {
+    // Check if this stage OR any of its related statuses occurred
+    const hasOccurred = (key) => {
+      if (occurredMap[key]) return true;
+      // Aliases
+      if (key === 'Quotation Raised' && (occurredMap['Quotation Shared'] || occurredMap['Quotation'])) return true;
+      if (key === 'Invoice Raised' && (occurredMap['Pro-forma Raised'] || occurredMap['Tax Invoice Raised'] || occurredMap['Invoice'])) return true;
+      if (key === 'Shared' && (occurredMap['Materials Shared'])) return true;
+      return false;
+    };
+
     // Always show the core happy path
     if (
       stage.key === 'New' || 
@@ -52,13 +61,20 @@ export default function LeadStatusBar({ statusHistory = [], currentStatus }) {
       stage.key === 'Callback' ||
       stage.key === 'Follow Up' ||
       stage.key === 'Shared' ||
-      stage.key === 'Quotation Raised' ||
-      stage.key === 'Invoice Raised' ||
       stage.key === 'Not Interested'
-    ) return !!occurredMap[stage.key];
+    ) return hasOccurred(stage.key);
 
     return false;
   });
+
+  // Updated occurred check for the actual rendering
+  const checkOccurred = (stageKey) => {
+    if (occurredMap[stageKey]) return true;
+    if (stageKey === 'Quotation Raised' && (currentStatus.includes('Quotation') || occurredMap['Quotation Raised'] || occurredMap['Quotation Shared'])) return true;
+    if (stageKey === 'Invoice Raised' && (currentStatus.includes('Invoice') || currentStatus === 'Converted' || occurredMap['Invoice Raised'] || occurredMap['Pro-forma Raised'] || occurredMap['Tax Invoice Raised'])) return true;
+    if (stageKey === 'Shared' && (currentStatus === 'Shared' || occurredMap['Materials Shared'])) return true;
+    return false;
+  };
 
   const isNegative = TERMINAL_NEGATIVE.includes(currentStatus);
   const isConverted = currentStatus === 'Converted';
@@ -68,8 +84,9 @@ export default function LeadStatusBar({ statusHistory = [], currentStatus }) {
       {/* Progress Steps */}
       <div className="flex items-start gap-0 overflow-x-auto pb-2">
         {stagesToShow.map((stage, idx) => {
-          const occurred = !!occurredMap[stage.key];
-          const isCurrent = currentStatus === stage.key;
+          const occurred = checkOccurred(stage.key);
+          const isCurrent = currentStatus === stage.key || 
+                           (stage.key === 'Invoice Raised' && (currentStatus === 'Invoice Raised' || currentStatus === 'Pro-forma Raised' || currentStatus === 'Tax Invoice Raised'));
           const isFirst = idx === 0;
           const isLast = idx === stagesToShow.length - 1;
 

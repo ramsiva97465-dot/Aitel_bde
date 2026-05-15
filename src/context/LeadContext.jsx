@@ -397,15 +397,15 @@ export const LeadProvider = ({ children }) => {
     return u ? u.name : '—';
   };
 
-  const getLeadById = (leadId) => leads.find((l) => l.id === leadId);
+  const getLeadById = (leadId) => leads.find((l) => l.id == leadId);
 
-  const getLeadsForBDE = (bdeId) => leads.filter((l) => l.assignedTo === bdeId);
+  const getLeadsForBDE = (bdeId) => leads.filter((l) => l.assignedTo == bdeId);
 
   const getBDEs = () => users.filter((u) => u.role === 'bde');
 
   const markLeadSeen = (leadId) => {
     setLeads((prev) =>
-      prev.map((l) => (l.id === leadId ? { ...l, isSeen: true } : l))
+      prev.map((l) => (l.id == leadId ? { ...l, isSeen: true } : l))
     );
   };
 

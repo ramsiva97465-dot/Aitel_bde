@@ -606,28 +606,29 @@ app.patch('/api/leads/:id/seen', async (req, res) => {
 
 app.delete('/api/leads/:id', async (req, res) => {
   const { id } = req.params;
-  const leadIdInt = parseInt(id, 10);
-  
-  if (isNaN(leadIdInt)) {
-    return res.status(400).json({ error: 'Invalid lead ID' });
-  }
+  console.log(`🗑️ ATTEMPTING DELETE: Lead ID ${id}`);
 
   try {
-    // 1. Delete associated data first using explicit cast
-    await pool.query('DELETE FROM follow_ups WHERE lead_id = $1::integer', [leadIdInt]);
-    await pool.query('DELETE FROM invoices WHERE lead_id = $1::integer', [leadIdInt]);
-    await pool.query('DELETE FROM quotations WHERE lead_id = $1::integer', [leadIdInt]);
-    await pool.query('DELETE FROM lead_notes WHERE lead_id = $1::integer', [leadIdInt]);
+    // 1. Delete associated data
+    const fRes = await pool.query('DELETE FROM follow_ups WHERE lead_id = $1', [id]);
+    const iRes = await pool.query('DELETE FROM invoices WHERE lead_id = $1', [id]);
+    const qRes = await pool.query('DELETE FROM quotations WHERE lead_id = $1', [id]);
+    const nRes = await pool.query('DELETE FROM lead_notes WHERE lead_id = $1', [id]);
     
-    // 2. Delete the lead itself
-    const result = await pool.query('DELETE FROM demo_requests WHERE id = $1::integer', [leadIdInt]);
+    console.log(`✅ Associated data cleared: F:${fRes.rowCount} I:${iRes.rowCount} Q:${qRes.rowCount} N:${nRes.rowCount}`);
+
+    // 2. Delete the lead
+    const result = await pool.query('DELETE FROM demo_requests WHERE id = $1', [id]);
     
     if (result.rowCount === 0) {
+      console.log('⚠️ DELETE FAILED: Lead ID not found in database.');
       return res.status(404).json({ error: 'Lead not found' });
     }
+
+    console.log(`✨ DELETE SUCCESS: Lead ${id} removed from demo_requests.`);
     res.json({ success: true, message: 'Lead and all associated data deleted successfully' });
   } catch (err) {
-    console.error('❌ Deep Delete Error:', err.message);
+    console.error('❌ CRITICAL DELETE ERROR:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

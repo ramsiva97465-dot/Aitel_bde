@@ -286,9 +286,10 @@ app.post('/api/webhooks/portal', async (req, res) => {
 
       // If lead doesn't exist, create a shell lead for this invoice
       if (!leadId) {
+        const autoAssignedTo = await getNextBDE();
         const newLead = await pool.query(
-          'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-          [customerName, email, phone, companyName, 'External Billing', isInvoice ? 'Invoice Raised' : 'Quotation Raised']
+          'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+          [customerName, email, phone, companyName, 'External Billing', isInvoice ? 'Invoice Raised' : 'Quotation Raised', autoAssignedTo]
         );
         leadId = newLead.rows[0].id;
       }

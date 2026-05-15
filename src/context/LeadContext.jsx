@@ -391,7 +391,9 @@ export const LeadProvider = ({ children }) => {
 
   // ---- HELPERS ----
   const getBDEName = (bdeId) => {
-    const u = users.find((u) => u.id === bdeId);
+    if (!bdeId) return '—';
+    // Use loose equality to handle string/number mismatch from DB
+    const u = users.find((u) => u.id == bdeId);
     return u ? u.name : '—';
   };
 

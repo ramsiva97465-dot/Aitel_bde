@@ -262,12 +262,12 @@ app.post('/api/webhooks/portal', async (req, res) => {
   const isMeta = data.object === 'page' || data.leadgen_id;
   const source = isMeta ? 'Meta Ads' : 'Company Portal';
   
-  // Try to find name, phone, email in any likely field names
-  const customerName = data.customerName || data.name || data.full_name || (isMeta ? 'New Meta Lead' : 'Unknown Client');
-  const phone = data.phone || data.phone_number || (isMeta ? 'Check Meta Suite' : '');
-  const email = data.email || data.email_address || '';
-  const companyName = data.companyName || data.company_name || '—';
-  const requirement = data.requirement || data.message || data.notes || '—';
+  // Ultra-flexible mapping to catch fields from any form (like the one in the screenshot)
+  const customerName = data.fullName || data.full_name || data['Full Name'] || data.customerName || data.name || (isMeta ? 'New Meta Lead' : 'Unknown Client');
+  const phone = data.phoneNumber || data.phone_number || data['Phone Number'] || data.phone || (isMeta ? 'Check Meta Suite' : '');
+  const email = data.email || data.email_address || data.Email || '';
+  const companyName = data.companyName || data.company_name || data['Company Name'] || data.Company || data.company || '—';
+  const requirement = data.requirement || data.message || data.notes || data.Requirement || '—';
   let status = data.status || 'In Queue';
 
   // ══════════════════════════════════════════

@@ -1,9 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserCheck, UserPlus, PhoneCall, Calendar,
-  Bell, Settings, FileText, FileSpreadsheet, LogOut, ChevronRight, Zap, Layers
+  Bell, Settings, FileText, FileSpreadsheet, LogOut, ChevronRight, Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import aitelLogo from '../assets/aitel-dot-192.png';
 
 const adminLinks = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,13 +41,11 @@ export default function Sidebar({ onClose }) {
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-100 w-64 shadow-sm">
       {/* Brand */}
-      <div className="flex items-center gap-2 px-5 py-5 border-b border-gray-100">
-        <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
-          <Zap size={18} className="text-white" />
-        </div>
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
+        <img src={aitelLogo} alt="AItel" className="w-9 h-9 object-contain" />
         <div>
-          <p className="text-base font-bold text-gray-800 leading-tight">LeadPilot</p>
-          <p className="text-[10px] text-brand-600 font-bold uppercase tracking-wider">AI Telecalling</p>
+          <p className="text-lg font-black text-brand-600 leading-tight tracking-tighter">AItel</p>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Business Solutions</p>
         </div>
       </div>
 

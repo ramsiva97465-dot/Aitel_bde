@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Eye, EyeOff, BookOpen, Clock, Layers, Users, ArrowRight, Mail, Lock, Phone } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Clock, Layers, Users, ArrowRight, Mail, Lock, Phone } from 'lucide-react';
+import aitelLogo from '../assets/aitel-dot-192.png';
 import { toast } from 'react-hot-toast';
 
 export default function Login() {
@@ -81,8 +82,8 @@ export default function Login() {
         <div className="w-full max-w-sm relative z-10">
           {/* Brand Logo */}
           <div className="mb-8 flex flex-col items-center gap-4">
-            <img src="/favicon.png" alt="LeadPilot" className="w-20 h-20 object-contain drop-shadow-xl animate-float" />
-            <h2 className="text-4xl font-bold text-brand-600 tracking-tighter">LeadPilot</h2>
+            <img src={aitelLogo} alt="AItel" className="w-24 h-24 object-contain drop-shadow-xl animate-float" />
+            <h2 className="text-5xl font-black text-brand-600 tracking-tighter">AItel</h2>
           </div>
 
           {/* Portal Tabs */}

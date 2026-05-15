@@ -89,7 +89,7 @@ export const LeadProvider = ({ children }) => {
 
   useEffect(() => {
     fetchAllData(); // Load everything on start
-    const interval = setInterval(fetchAllData, 30000); // Refresh every 30s
+    const interval = setInterval(fetchAllData, 5000); // Refresh every 5s for real-time feel
     return () => clearInterval(interval);
   }, []);
 

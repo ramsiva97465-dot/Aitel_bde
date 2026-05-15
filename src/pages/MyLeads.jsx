@@ -30,9 +30,8 @@ export default function MyLeads() {
       <div className="card">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              className="input-field pl-9"
+              className="input-field"
               placeholder="Search name, phone, company..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}

@@ -97,62 +97,7 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Syncing Bridge Section */}
-      <div className="card border-l-4 border-emerald-500 bg-emerald-50/30 p-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <RefreshCw size={24} className={syncing ? 'animate-spin' : ''} />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-bold text-gray-800">Invoice Website Sync</h2>
-            <p className="text-sm text-gray-500 mb-4">To see Invoices & Quotations here, copy this URL and paste it into your <strong>Invoice Website Settings</strong> under "Webhook" or "API":</p>
-            <div className="flex items-center gap-2 p-3 bg-white border border-emerald-100 rounded-xl">
-              <code className="text-xs text-emerald-700 font-mono flex-1 break-all">
-                https://aitel-lead-backend.onrender.com/api/webhooks/portal
-              </code>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText('https://aitel-lead-backend.onrender.com/api/webhooks/portal');
-                  toast.success('Webhook Link Copied!');
-                }}
-                className="btn-primary text-[10px] py-1.5 px-3 uppercase tracking-widest"
-              >
-                Copy Link
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Integration Status Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
-          <Megaphone size={16} className="text-blue-600 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-blue-700">Meta Ads Webhook</p>
-            <p className="text-[11px] text-blue-500 truncate font-mono">
-              https://aitel-lead-backend.onrender.com/api/webhooks/portal
-            </p>
-          </div>
-          <button
-            onClick={() => { navigator.clipboard.writeText('https://aitel-lead-backend.onrender.com/api/webhooks/portal'); toast.success('Meta Webhook Copied!'); }}
-            className="badge bg-blue-100 text-blue-700 text-[10px] cursor-pointer hover:bg-blue-200"
-          >Copy</button>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-3 bg-purple-50 border border-purple-100 rounded-xl">
-          <Globe size={16} className="text-purple-600 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-purple-700">Company Portal Webhook</p>
-            <p className="text-[11px] text-purple-500 truncate font-mono">
-              https://aitel-lead-backend.onrender.com/api/webhooks/portal
-            </p>
-          </div>
-          <button
-            onClick={() => { navigator.clipboard.writeText('https://aitel-lead-backend.onrender.com/api/webhooks/portal'); toast.success('Portal Webhook Copied!'); }}
-            className="badge bg-purple-100 text-purple-700 text-[10px] cursor-pointer hover:bg-purple-200"
-          >Copy</button>
-        </div>
-      </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">

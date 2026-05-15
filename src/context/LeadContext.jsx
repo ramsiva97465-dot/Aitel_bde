@@ -431,9 +431,9 @@ export const LeadProvider = ({ children }) => {
       
       // Update local state for all related data
       setLeads((prev) => prev.filter((l) => l.id != leadId));
-      setFollowUps((prev) => prev.filter((f) => f.lead_id != leadId));
-      setInvoices((prev) => prev.filter((i) => i.lead_id != leadId));
-      setQuotations((prev) => prev.filter((q) => q.lead_id != leadId));
+      setFollowUps((prev) => prev.filter((f) => f.lead_id != leadId && f.leadId != leadId));
+      setInvoices((prev) => prev.filter((i) => i.lead_id != leadId && i.leadId != leadId));
+      setQuotations((prev) => prev.filter((q) => q.lead_id != leadId && q.leadId != leadId));
       
       return true;
     } catch (err) {

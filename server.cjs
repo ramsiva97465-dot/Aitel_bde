@@ -188,8 +188,8 @@ app.post('/api/register', async (req, res) => {
   const { name, email, password, phone, role } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role',
-      [name, email, password, phone, role || 'admin']
+      'INSERT INTO users (name, email, password, phone, role, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, status',
+      [name, email, password, phone, role || 'admin', 'active']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -203,7 +203,7 @@ app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await pool.query(
-      'SELECT id, name, email, password, role FROM users WHERE email = $1 AND password = $2',
+      'SELECT id, name, email, password, role, status FROM users WHERE email = $1 AND password = $2',
       [email, password]
     );
     if (result.rows.length > 0) {
@@ -421,7 +421,7 @@ app.patch('/api/leads/:id', async (req, res) => {
 // Fetch Users
 app.get('/api/users', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, email, phone, role FROM users ORDER BY name ASC');
+    const result = await pool.query('SELECT id, name, email, phone, role, status FROM users ORDER BY name ASC');
     res.json(result.rows);
   } catch (err) {
     console.error('❌ Failed to fetch users:', err.message);

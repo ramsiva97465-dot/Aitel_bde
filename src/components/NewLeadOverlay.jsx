@@ -14,60 +14,60 @@ export default function NewLeadOverlay() {
   const navigate = useNavigate();
   const [activeLead, setActiveLead] = useState(null);
 
-  useEffect(() => {
-    if (!currentUser || currentUser.role !== 'bde') return;
+    // 1. Find the MOST RECENT lead that is still in the Queue and assigned to this BDE
+    const pendingLead = leads
+      .filter(l => l.assignedTo == currentUser.id && l.status === 'In Queue')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
-    // Find first lead that is assigned to this BDE and NOT seen yet
-    const unseen = leads.find(l => l.assignedTo == currentUser.id && l.isSeen === false);
-
-    if (unseen) {
-      // Check if we already alerted for this lead recently
-      const lastAlertKey = `last_alert_${unseen.id}`;
+    if (pendingLead) {
+      const lastAlertKey = `last_alert_${pendingLead.id}`;
       const lastAlertTime = localStorage.getItem(lastAlertKey);
       const thirtyMinutes = 30 * 60 * 1000;
-      const isNewLead = !activeLead || activeLead.id !== unseen.id;
+      
+      // TRIGGER IF: 
+      // a) It's a brand new lead we haven't seen in this session yet
+      // b) OR it's been 30 minutes since the last alert for this specific lead
+      const shouldAlert = !activeLead || 
+                         activeLead.id !== pendingLead.id || 
+                         !lastAlertTime || 
+                         Date.now() - Number(lastAlertTime) > thirtyMinutes;
 
-      if (isNewLead || !lastAlertTime || Date.now() - Number(lastAlertTime) > thirtyMinutes) {
-        setActiveLead(unseen);
+      if (shouldAlert) {
+        setActiveLead(pendingLead);
         localStorage.setItem(lastAlertKey, Date.now().toString());
         
-        // Play Notification Sound (Beep)
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime); // LOUDER
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 300);
+        // 🎵 Play Loud Double Beep
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const playBeep = (delay = 0) => {
+            setTimeout(() => {
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+              gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              osc.start();
+              setTimeout(() => osc.stop(), 300);
+            }, delay);
+          };
+          playBeep(0);
+          playBeep(400);
+        } catch (e) { console.warn(e); }
 
-        // Second Beep
-        setTimeout(() => {
-          const osc2 = audioCtx.createOscillator();
-          const gain2 = audioCtx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
-          gain2.gain.setValueAtTime(0.8, audioCtx.currentTime);
-          osc2.connect(gain2);
-          gain2.connect(audioCtx.destination);
-          osc2.start();
-          setTimeout(() => osc2.stop(), 300);
-        }, 400);
-      } catch (err) {
-        console.warn('Audio play failed:', err);
+        // 🌐 Chrome Desktop Notification
+        if (Notification.permission === 'granted') {
+          new Notification('Lead Reminder!', {
+            body: `Inquiry from ${pendingLead.customerName} is waiting in your queue.`,
+            icon: '/favicon.ico',
+            requireInteraction: true // Keeps it visible
+          });
+        }
       }
-      
-      // Browser Desktop Notification
-      if (Notification.permission === 'granted') {
-        new Notification('New Lead Assigned!', {
-          body: `New inquiry from ${unseen.customerName} via ${unseen.source}.`,
-          icon: '/favicon.ico'
-        });
-      }
-      }
+    } else {
+      // No pending leads, clear active overlay
+      setActiveLead(null);
     }
   }, [leads, currentUser, activeLead]);
 

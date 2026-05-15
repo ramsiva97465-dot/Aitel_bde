@@ -13,6 +13,7 @@ export default function NewLeadOverlay() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [activeLead, setActiveLead] = useState(null);
+  const [dismissedLeads, setDismissedLeads] = useState(new Set());
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'bde') return;
@@ -25,13 +26,10 @@ export default function NewLeadOverlay() {
       const lastAlertTime = localStorage.getItem(lastAlertKey);
       const thirtyMinutes = 30 * 60 * 1000;
       
-      // TRIGGER IF: 
-      // a) It's a brand new lead we haven't seen in this session yet
-      // b) OR it's been 30 minutes since the last alert for this specific lead
-      const shouldAlert = !activeLead || 
-                         activeLead.id !== pendingLead.id || 
-                         !lastAlertTime || 
-                         Date.now() - Number(lastAlertTime) > thirtyMinutes;
+      const hasDismissed = dismissedLeads.has(pendingLead.id);
+      const timeSinceLastAlert = lastAlertTime ? Date.now() - Number(lastAlertTime) : Infinity;
+      
+      const shouldAlert = !hasDismissed && (timeSinceLastAlert > thirtyMinutes || !activeLead);
 
       if (shouldAlert) {
         setActiveLead(pendingLead);
@@ -62,26 +60,25 @@ export default function NewLeadOverlay() {
           new Notification('Lead Reminder!', {
             body: `Inquiry from ${pendingLead.customerName} is waiting in your queue.`,
             icon: '/favicon.ico',
-            requireInteraction: true // Keeps it visible
+            requireInteraction: true 
           });
         }
       }
     } else {
-      // No pending leads, clear active overlay
       setActiveLead(null);
     }
-  }, [leads, currentUser, activeLead]);
+  }, [leads, currentUser, dismissedLeads]);
 
   if (!activeLead) return null;
 
   const handleAcknowledge = () => {
-    markLeadSeen(activeLead.id);
+    setDismissedLeads(prev => new Set([...prev, activeLead.id]));
     setActiveLead(null);
   };
 
   const handleGoToLead = () => {
+    setDismissedLeads(prev => new Set([...prev, activeLead.id]));
     navigate(`/bde/lead/${activeLead.id}`);
-    markLeadSeen(activeLead.id);
     setActiveLead(null);
   };
 

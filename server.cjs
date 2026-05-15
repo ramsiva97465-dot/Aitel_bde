@@ -259,13 +259,15 @@ app.post('/api/webhooks/portal', async (req, res) => {
   const data = req.body;
   console.log('📬 Webhook Received:', JSON.stringify(data, null, 2));
 
-  const isMeta = data.object === 'page';
+  const isMeta = data.object === 'page' || data.leadgen_id;
   const source = isMeta ? 'Meta Ads' : 'Company Portal';
   
-  const customerName = isMeta ? 'New Meta Lead' : (data.customerName || data.name || 'Unknown Client');
-  const phone = isMeta ? 'Check Meta Suite' : (data.phone || '');
-  const email = data.email || '';
-  const companyName = data.companyName || '—';
+  // Try to find name, phone, email in any likely field names
+  const customerName = data.customerName || data.name || data.full_name || (isMeta ? 'New Meta Lead' : 'Unknown Client');
+  const phone = data.phone || data.phone_number || (isMeta ? 'Check Meta Suite' : '');
+  const email = data.email || data.email_address || '';
+  const companyName = data.companyName || data.company_name || '—';
+  const requirement = data.requirement || data.message || data.notes || '—';
   let status = data.status || 'In Queue';
 
   // ══════════════════════════════════════════
@@ -342,8 +344,8 @@ app.post('/api/webhooks/portal', async (req, res) => {
       // INSERT NEW (Auto-Assigned to Queue via Round Robin)
       const autoAssignedTo = await getNextBDE();
       await pool.query(
-        'INSERT INTO demo_requests (customer_name, email, phone, company_name, source, status, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [customerName, email, phone, companyName, source, 'In Queue', autoAssignedTo]
+        'INSERT INTO demo_requests (customer_name, email, phone, company_name, requirement, source, status, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [customerName, email, phone, companyName, requirement, source, 'In Queue', autoAssignedTo]
       );
       console.log('✅ New Webhook Lead Round-Robin Assigned to BDE:', autoAssignedTo);
     }

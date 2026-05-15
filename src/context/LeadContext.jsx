@@ -41,6 +41,7 @@ export const LeadProvider = ({ children }) => {
             customerName: l.customer_name,
             companyName: l.company_name,
             assignedTo: l.assigned_to,
+            createdAt: l.created_at,
             notes: l.notes || [],
             statusHistory: l.status_history || [{ status: l.status, date: l.created_at, updatedBy: 'System' }]
           })));

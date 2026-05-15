@@ -21,8 +21,8 @@ export default function BDEDashboard() {
   const unread = getUnreadCount(currentUser?.id);
 
   // Split leads into Pipeline vs Queue
-  const finalStatuses = ['Converted', 'Not Interested'];
-  const activePipelineLeads = allMyLeads.filter(l => l.status !== 'In Queue' && !finalStatuses.includes(l.status));
+  // Leads move from Dashboard to Pipeline as soon as ANY status is updated (other than In Queue)
+  const activePipelineLeads = allMyLeads.filter(l => l.status !== 'In Queue' && l.statusHistory?.length <= 1);
   const queuedLeads = allMyLeads.filter(l => l.status === 'In Queue');
 
   const statusCount = (s) => allMyLeads.filter((l) => l.status === s).length;

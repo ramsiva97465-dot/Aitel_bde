@@ -613,9 +613,8 @@ app.delete('/api/leads/:id', async (req, res) => {
     const fRes = await pool.query('DELETE FROM follow_ups WHERE lead_id = $1', [id]);
     const iRes = await pool.query('DELETE FROM invoices WHERE lead_id = $1', [id]);
     const qRes = await pool.query('DELETE FROM quotations WHERE lead_id = $1', [id]);
-    const nRes = await pool.query('DELETE FROM lead_notes WHERE lead_id = $1', [id]);
     
-    console.log(`✅ Associated data cleared: F:${fRes.rowCount} I:${iRes.rowCount} Q:${qRes.rowCount} N:${nRes.rowCount}`);
+    console.log(`✅ Associated data cleared: F:${fRes.rowCount} I:${iRes.rowCount} Q:${qRes.rowCount}`);
 
     // 2. Delete the lead
     const result = await pool.query('DELETE FROM demo_requests WHERE id = $1', [id]);

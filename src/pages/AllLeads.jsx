@@ -110,7 +110,8 @@ export default function AllLeads() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               id="leads-search"
-              className="input-field pl-12"
+              className="input-field"
+              style={{ paddingLeft: '42px' }}
               placeholder="Search name, phone, company..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
